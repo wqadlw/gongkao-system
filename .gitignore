@@ -16,6 +16,9 @@ dist/
 dist-ssr/
 *.local
 .vite/
+# Vite config-loader cache
+vite.config.*.timestamp-*.mjs
+frontend/vite.config.js.timestamp-*.mjs
 
 # ── Logs ──────────────────────────────────────────────
 *.log
