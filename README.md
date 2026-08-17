@@ -92,6 +92,21 @@ cd frontend && npm install && npm run build && cd ..
 
 ---
 
+## 🖼 界面预览
+
+> 截图来自本地运行实例（`http://localhost:7080`，分辨率 2560×1371）。
+
+| 页面 | 预览 |
+|------|------|
+| **首页看板** — 考试倒计时 / 统计概览 / 六大模块掌握度 / 薄弱考点 TOP5 | ![首页看板](docs/screenshots/dashboard.jpg) |
+| **题目录入** — 三步流程：复制提示词 → 粘贴 AI 返回 → 解析预览并入库 | ![题目录入](docs/screenshots/question-input.jpg) |
+| **行测知识库** — 知识卡片列表 / 模块导航 / 类型筛选 / 考点定位树 | ![行测知识库](docs/screenshots/knowledge.jpg) |
+| **提示词模板管理** — 六大模块提示词 / 通用+专属双模板体系 | ![提示词模板管理](docs/screenshots/prompts.jpg) |
+
+> 更多页面（解题库 / 可视化大屏 / 备考笔记 / 核对并入库）截图待补充。
+
+---
+
 ## 🔒 数据与隐私
 
 - 所有数据保存在本地 `data/gongkao.db`（SQLite），**不联网、不上传、无遥测**。
