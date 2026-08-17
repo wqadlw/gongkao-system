@@ -1,0 +1,28 @@
+{
+  "name": "gongkao-xingce-v2",
+  "version": "2.0.0",
+  "description": "公考行测个人结构化知识库系统 v2 - Markdown 结构化解析版",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "axios": "^1.6.5",
+    "dayjs": "^1.11.10",
+    "echarts": "^5.4.3",
+    "element-plus": "^2.4.4",
+    "katex": "^0.16.47",
+    "marked": "^11.1.1",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.0",
+    "vue-echarts": "^6.6.8",
+    "vue-router": "^4.2.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.3",
+    "vite": "^5.0.10"
+  }
+}

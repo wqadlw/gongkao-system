@@ -1,0 +1,49 @@
+# ── Python ─────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.Python
+*.sqlite3
+*.db
+
+# ── Node / Frontend ───────────────────────────────────
+node_modules/
+frontend/dist/
+dist/
+dist-ssr/
+*.local
+.vite/
+
+# ── Logs ──────────────────────────────────────────────
+*.log
+backend.log
+
+# ── Environment / secrets ─────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Project data (user-generated; never source) ───────
+data/*.db
+data/exports/*
+!data/.gitkeep
+!data/exports/.gitkeep
+
+# ── Editor / OS ───────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# ── WorkBuddy project-local memory (not source) ───────
+.workbuddy/
+
+# ── Tooling caches ────────────────────────────────────
+.eslintcache
+.cache/

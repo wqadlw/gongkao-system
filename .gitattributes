@@ -1,0 +1,18 @@
+# Auto-detect text files and normalize line endings to LF on checkout/commit.
+* text=auto eol=lf
+
+# Windows batch files must keep CRLF to remain executable.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Shell scripts use LF.
+*.sh text eol=lf
+
+# Binary assets (do not normalize or diff).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
