@@ -36,6 +36,34 @@ def get_dashboard_stats(db: Session) -> dict:
     total_mastered = sum(1 for q in questions if q.master_level >= 4)
     avg_mastery = sum(q.master_level for q in questions) / len(questions) if questions else 0
 
+    # 最近录入（最新 5 题）
+    recent = db.query(Question).order_by(Question.create_time.desc()).limit(5).all()
+    recent_questions = [{
+        "id": q.id,
+        "title": (q.question_raw or "").replace("\n", " ")[:60],
+        "module": q.level1,
+        "sub_point": q.sub_point,
+        "create_time": q.create_time.strftime("%m-%d") if q.create_time else "",
+        "master_level": q.master_level,
+        "is_error": q.is_error,
+    } for q in recent]
+
+    # 今日复习进度
+    today_str = now.strftime("%Y-%m-%d")
+    today_stat = db.query(DailyStat).filter(DailyStat.stat_date == today_str).first()
+    reviewed_today = today_stat.review_count if today_stat else 0
+    reviewable = sum(1 for q in questions if q.review_count and q.review_count > 0)
+    review_progress = {"due": due_today, "done_today": reviewed_today, "reviewable": reviewable}
+
+    # 掌握度趋势（近 7 天，按每日复习日志的 master_after 均值）
+    mastery_trend = []
+    for i in range(6, -1, -1):
+        day = (now - timedelta(days=i)).date()
+        day_str = day.strftime("%Y-%m-%d")
+        logs = db.query(ReviewLog).filter(func.date(ReviewLog.review_time) == day_str).all()
+        avg = round(sum(l.master_after for l in logs) / len(logs), 1) if logs else None
+        mastery_trend.append({"date": day.strftime("%m-%d"), "mastery": avg})
+
     return {
         "total_questions": len(questions),
         "total_errors": total_errors,
@@ -45,6 +73,9 @@ def get_dashboard_stats(db: Session) -> dict:
         "avg_mastery": round(avg_mastery, 1),
         "modules": modules,
         "weak_points": weak_points,
+        "recent_questions": recent_questions,
+        "review_progress": review_progress,
+        "mastery_trend": mastery_trend,
     }
 
 

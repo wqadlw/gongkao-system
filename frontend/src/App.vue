@@ -26,7 +26,7 @@
 
         <div class="top-search">
           <el-icon class="search-ico"><Search /></el-icon>
-          <input v-model="searchKw" @keyup.enter="doSearch" placeholder="搜索题目、知识点…" />
+          <input ref="searchInput" v-model="searchKw" @keyup.enter="doSearch" placeholder="搜索题目、知识点、解题技巧…  (按 S)" />
         </div>
 
         <div class="top-spacer"></div>
@@ -40,7 +40,13 @@
         <button class="icon-btn" @click="store.toggleDarkMode()" :title="darkMode ? '切换浅色' : '切换深色'">
           <el-icon><Moon v-if="darkMode" /><Sunny v-else /></el-icon>
         </button>
+
+        <button class="icon-btn" @click="showHelp = true" title="快捷键帮助 (?)">
+          <el-icon><QuestionFilled /></el-icon>
+        </button>
       </header>
+
+      <ShortcutHelp v-model="showHelp" />
 
       <!-- 内容 -->
       <main class="content">
@@ -55,13 +61,22 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from './stores/app'
+import { useShortcuts } from './composables/useShortcuts'
+import ShortcutHelp from './components/ShortcutHelp.vue'
 
 const store = useAppStore()
 const route = useRoute()
 const router = useRouter()
+
+const showHelp = ref(false)
+const searchInput = ref(null)
+function focusSearch() {
+  nextTick(() => searchInput.value && searchInput.value.focus())
+}
+useShortcuts({ onHelp: () => (showHelp.value = true), onSearch: focusSearch })
 
 const menuItems = [
   { path: '/dashboard', icon: 'DataLine', label: '首页看板' },
@@ -89,7 +104,7 @@ const nearestExam = computed(() => {
 
 function doSearch() {
   if (!searchKw.value.trim()) return
-  router.push({ path: '/question-list', query: { keyword: searchKw.value.trim() } })
+  router.push({ path: '/search', query: { q: searchKw.value.trim() } })
 }
 
 onMounted(() => {

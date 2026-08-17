@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from database import init_all, DB_PATH
-from routers import categories, prompts, questions, review, notes, study, stats, backup, exam, knowledge, solve_library
+from routers import categories, prompts, questions, review, notes, study, stats, backup, exam, knowledge, solve_library, search
 
 app = FastAPI(
     title="公考行测知识库系统 v2",
@@ -38,6 +38,7 @@ app.include_router(backup.router)
 app.include_router(exam.router)
 app.include_router(knowledge.router)
 app.include_router(solve_library.router)
+app.include_router(search.router)
 
 
 @app.on_event("startup")

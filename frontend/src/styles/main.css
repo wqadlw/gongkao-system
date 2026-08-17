@@ -172,6 +172,133 @@ body {
   box-shadow: var(--shadow-lg);
 }
 
+/* ============================================
+   设计系统 · 共享区块 / 页头 / 空态 / 骨架
+   供所有页面复用，保证 15 个页面视觉语言一致
+   ============================================ */
+
+/* 页面统一页头：标题 + 副标题 + 右侧操作区 */
+.gk-page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.gk-page-head__main { min-width: 0; }
+.gk-page-head__title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gk-page-head__title .ico { font-size: 22px; color: var(--primary); }
+.gk-page-head__sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.gk-page-head__extra { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* 区块容器（替代各处重复的 .card） */
+.gk-section {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+}
+.gk-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
+.gk-section__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gk-section__title .dot {
+  width: 4px; height: 16px; border-radius: 3px;
+  background: linear-gradient(180deg, var(--primary) 0%, var(--primary-light) 100%);
+}
+.gk-section__extra { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gk-section__body { padding: 16px 18px; }
+
+/* 空态（首跑 / 无数据引导） */
+.gk-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 44px 20px;
+  color: var(--text-tertiary);
+  gap: 10px;
+}
+.gk-empty__icon { font-size: 46px; opacity: 0.7; line-height: 1; }
+.gk-empty__title { font-size: 15px; font-weight: 600; color: var(--text-secondary); }
+.gk-empty__desc { font-size: 13px; max-width: 380px; line-height: 1.65; }
+.gk-empty__actions { margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+/* 骨架屏（加载占位） */
+.gk-skeleton { padding: 4px 0; }
+.gk-skeleton__line {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--bg-subtle) 25%, var(--bg-hover) 37%, var(--bg-subtle) 63%);
+  background-size: 400% 100%;
+  animation: gk-shimmer 1.4s ease infinite;
+  margin: 8px 0;
+}
+@keyframes gk-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* 渐变装饰（考试类型 / 横幅，替代组件中硬编码 hex） */
+.gk-grad-indigo  { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.gk-grad-rose    { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+.gk-grad-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); }
+.gk-grad-teal    { background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%); }
+
+/* 响应式栅格工具类 */
+.gk-grid { display: grid; gap: 16px; }
+.gk-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.gk-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.gk-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.gk-row    { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 1100px) {
+  .gk-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .gk-grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+  .gk-grid-4, .gk-grid-3, .gk-grid-2, .gk-row { grid-template-columns: 1fr; }
+  .gk-page-head { margin-bottom: 14px; }
+}
+
+/* 无障碍：尊重「减弱动效」系统设置 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
 /* 统计数字 */
 .stat-number {
   font-size: 28px;

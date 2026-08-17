@@ -138,11 +138,20 @@
             </div>
           </div>
         </template>
-        <div v-else class="sl-empty">
-          <el-icon class="sle-ico"><DocumentDelete /></el-icon>
-          <div>{{ kaodianPath.length ? '该考点下没有匹配的解题条目' : '没有匹配的解题条目' }}</div>
-          <button v-if="activeModule !== 'all' || activeType !== 'all' || keyword || sortMode !== 'default' || viewMode !== 'flat' || kaodianPath.length" class="btn-default" @click="reset">清除筛选</button>
-        </div>
+        <EmptyState v-else-if="isEmptyLibrary" icon="DocumentDelete" title="解题库还是空的"
+          desc="建议先用「提示词助手」让 AI 帮你生成一批可复用解题模板，或手动新建 / 批量导入。">
+          <template #actions>
+            <button class="btn-primary" @click="showPrompt = true"><el-icon><MagicStick /></el-icon> 提示词助手</button>
+            <button class="btn-default" @click="showCreate = true"><el-icon><Plus /></el-icon> 新建</button>
+            <button class="btn-default" @click="openBatch"><el-icon><Upload /></el-icon> 批量导入</button>
+          </template>
+        </EmptyState>
+        <EmptyState v-else icon="🔍" :title="kaodianPath.length ? '该考点下没有匹配的解题条目' : '没有匹配的解题条目'"
+          desc="试着调整左侧筛选、搜索词或视图模式。">
+          <template #actions>
+            <button v-if="hasFilter" class="btn-default" @click="reset">清除筛选</button>
+          </template>
+        </EmptyState>
       </div>
     </section>
 
@@ -319,6 +328,7 @@ import { solveLibraryApi } from '../api'
 import { renderMarkdown } from '../utils/md'
 import { MODULES, modColor, modStyle, SOLVE_TYPES, solveStyle } from '../utils/constants'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import EmptyState from '../components/EmptyState.vue'
 
 const md = renderMarkdown
 const route = useRoute()
@@ -481,6 +491,13 @@ const displayGroups = computed(() => {
   }
   return [{ key: 'all', label: '', color: '', items: list }]
 })
+
+// 首跑引导 / 筛选态判定（用于空态组件）
+const isEmptyLibrary = computed(() => allItems.value.length === 0)
+const hasFilter = computed(() =>
+  activeModule.value !== 'all' || activeType.value !== 'all' || keyword.value ||
+  sortMode.value !== 'default' || viewMode.value !== 'flat' || kaodianPath.value.length
+)
 
 function goPractice(module) {
   router.push('/question-list?module=' + encodeURIComponent(module))

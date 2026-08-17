@@ -15,6 +15,7 @@ const routes = [
   { path: '/review', name: 'Review', component: () => import('../views/Review.vue'), meta: { title: '智能复习' } },
   { path: '/stages', name: 'Stages', component: () => import('../views/Stages.vue'), meta: { title: '备考阶段' } },
   { path: '/visualization', name: 'Visualization', component: () => import('../views/Visualization.vue'), meta: { title: '可视化大屏' } },
+  { path: '/search', name: 'Search', component: () => import('../views/Search.vue'), meta: { title: '全局搜索' } },
   { path: '/countdown', name: 'Countdown', component: () => import('../views/Countdown.vue'), meta: { title: '考试倒计时' } },
   { path: '/backup', name: 'Backup', component: () => import('../views/Backup.vue'), meta: { title: '备份导出' } },
 ]

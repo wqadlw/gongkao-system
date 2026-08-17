@@ -112,4 +112,8 @@ export const backupApi = {
   exportNotes: () => api.get('/backup/export/notes/md', { responseType: 'blob' }),
 }
 
+export const searchApi = {
+  search: (q, limit = 15) => api.get('/search', { params: { q, limit } }),
+}
+
 export default api
