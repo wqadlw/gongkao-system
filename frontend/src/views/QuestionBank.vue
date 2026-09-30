@@ -316,7 +316,12 @@ onMounted(async () => {
 .bank-missing pre { background: var(--bg-hover, #f5f5f5); padding: 10px 12px; border-radius: 8px; overflow: auto; }
 
 .bank-layout { display: flex; gap: 16px; align-items: flex-start; }
-.bank-side { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; max-height: calc(100vh - 120px); }
+.bank-side {
+  width: 300px; flex-shrink: 0; display: flex; flex-direction: column;
+  max-height: calc(100vh - 130px);
+  position: sticky; top: 16px; z-index: 5;
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,.06));
+}
 .bank-modules { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px; border-bottom: 1px solid var(--border-light, #eee); }
 .module-item {
   display: inline-flex; align-items: center; gap: 6px;

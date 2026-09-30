@@ -42,6 +42,7 @@ export const reviewApi = {
   getStats: () => api.get('/review/stats'),
   getLogs: (limit) => api.get('/review/logs', { params: { limit } }),
   getOverdue: () => api.get('/review/overdue'),
+  engine: () => api.get('/review/engine'),
 }
 
 export const noteApi = {

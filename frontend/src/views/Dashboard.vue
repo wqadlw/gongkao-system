@@ -8,14 +8,10 @@
         :class="exam.exam_type"
         :style="{ animationDelay: i * 80 + 'ms' }"
       >
-        <div class="cd-type-chip">
-          <el-icon><Timer /></el-icon> {{ exam.exam_type }}
-        </div>
+        <div class="cd-type-chip"><el-icon><Timer /></el-icon> {{ exam.exam_type }}</div>
         <div class="cd-content">
           <div class="cd-label">{{ exam.name }}</div>
-          <div class="cd-number" v-if="!exam.is_passed">
-            {{ exam.days_left }}<span class="cd-unit">天</span>
-          </div>
+          <div class="cd-number" v-if="!exam.is_passed">{{ exam.days_left }}<span class="cd-unit">天</span></div>
           <div class="cd-number passed" v-else>已结束</div>
           <div class="cd-date"><el-icon><Calendar /></el-icon> {{ exam.exam_date }}</div>
         </div>
@@ -35,6 +31,47 @@
         <div class="stat-body">
           <div class="stat-num">{{ s.value }}</div>
           <div class="stat-label">{{ s.label }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主体三栏：趋势(宽) + 快捷操作(侧) -->
+    <div class="main-grid">
+      <div class="card trend-card">
+        <div class="card-header">
+          <h3><el-icon><TrendCharts /></el-icon> 近 30 天录入趋势</h3>
+          <span class="trend-sum" v-if="trendTotal">累计 {{ trendTotal }} 题</span>
+        </div>
+        <div class="card-body">
+          <VChart class="trend-chart" :option="trendOption" autoresize />
+        </div>
+      </div>
+
+      <div class="card quick-card">
+        <div class="card-header">
+          <h3><el-icon><Promotion /></el-icon> 快捷操作</h3>
+        </div>
+        <div class="card-body quick-list">
+          <button class="quick-row primary" @click="$router.push('/question-input')">
+            <span class="qb-icon"><el-icon><EditPen /></el-icon></span>
+            <span class="qb-text"><b>录入新题</b><i>截图解析，结构化入库</i></span>
+            <el-icon class="qb-arrow"><ArrowRight /></el-icon>
+          </button>
+          <button class="quick-row success" @click="$router.push('/review')">
+            <span class="qb-icon"><el-icon><RefreshRight /></el-icon></span>
+            <span class="qb-text"><b>开始复习</b><i>{{ stats.due_today || 0 }} 题正在等你</i></span>
+            <el-icon class="qb-arrow"><ArrowRight /></el-icon>
+          </button>
+          <button class="quick-row warning" @click="$router.push('/errors')">
+            <span class="qb-icon"><el-icon><Warning /></el-icon></span>
+            <span class="qb-text"><b>错题重做</b><i>{{ stats.total_errors || 0 }} 道错题</i></span>
+            <el-icon class="qb-arrow"><ArrowRight /></el-icon>
+          </button>
+          <button class="quick-row info" @click="$router.push('/question-bank')">
+            <span class="qb-icon"><el-icon><Notebook /></el-icon></span>
+            <span class="qb-text"><b>真题库</b><i>2962 份历年试卷</i></span>
+            <el-icon class="qb-arrow"><ArrowRight /></el-icon>
+          </button>
         </div>
       </div>
     </div>
@@ -80,42 +117,23 @@
         </div>
       </div>
     </div>
-
-    <!-- 快捷操作 -->
-    <div class="card">
-      <div class="card-header">
-        <h3><el-icon><Promotion /></el-icon> 快捷操作</h3>
-      </div>
-      <div class="card-body">
-        <div class="quick-actions">
-          <button class="quick-btn primary" @click="$router.push('/question-input')">
-            <span class="qb-icon"><el-icon><EditPen /></el-icon></span>
-            <span>录入新题</span>
-          </button>
-          <button class="quick-btn success" @click="$router.push('/review')">
-            <span class="qb-icon"><el-icon><RefreshRight /></el-icon></span>
-            <span>开始复习</span>
-          </button>
-          <button class="quick-btn warning" @click="$router.push('/errors')">
-            <span class="qb-icon"><el-icon><Warning /></el-icon></span>
-            <span>错题重做</span>
-          </button>
-          <button class="quick-btn info" @click="$router.push('/visualization')">
-            <span class="qb-icon"><el-icon><TrendCharts /></el-icon></span>
-            <span>查看大屏</span>
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { statsApi, examApi } from '../api'
+import { use } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { LineChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent } from 'echarts/components'
+import VChart from 'vue-echarts'
+
+use([CanvasRenderer, LineChart, GridComponent, TooltipComponent])
 
 const stats = ref({})
 const exams = ref([])
+const trend = ref([])
 
 const statCards = computed(() => [
   { type: 'primary', icon: 'EditPen', value: stats.value.total_questions || 0, label: '总题量', to: '/question-list' },
@@ -124,14 +142,58 @@ const statCards = computed(() => [
   { type: 'warning', icon: 'Timer', value: stats.value.due_today || 0, label: '今日待复习', to: '/review' },
 ])
 
+const trendTotal = computed(() => trend.value.reduce((s, d) => s + (d.count || 0), 0))
+
+const trendOption = computed(() => ({
+  grid: { left: 8, right: 16, top: 24, bottom: 8, containLabel: true },
+  tooltip: {
+    trigger: 'axis',
+    formatter: (params) => `${params[0].name}<br/><b>${params[0].value}</b> 题`,
+  },
+  xAxis: {
+    type: 'category',
+    data: trend.value.map(d => d.date),
+    axisLine: { lineStyle: { color: '#e2e8f0' } },
+    axisTick: { show: false },
+    axisLabel: { color: '#94a3b8', fontSize: 10, interval: 5 },
+  },
+  yAxis: {
+    type: 'value',
+    minInterval: 1,
+    axisLabel: { color: '#94a3b8', fontSize: 10 },
+    splitLine: { lineStyle: { color: '#f1f5f9' } },
+  },
+  series: [{
+    type: 'line',
+    data: trend.value.map(d => d.count),
+    smooth: true,
+    symbol: 'circle',
+    symbolSize: 5,
+    showSymbol: false,
+    lineStyle: { width: 2.5, color: '#4f46e5' },
+    itemStyle: { color: '#4f46e5' },
+    areaStyle: {
+      color: {
+        type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+        colorStops: [
+          { offset: 0, color: 'rgba(79,70,229,0.28)' },
+          { offset: 1, color: 'rgba(79,70,229,0.02)' },
+        ],
+      },
+    },
+  }],
+}))
+
 async function loadData() {
   try {
-    const [statsRes, examRes] = await Promise.all([
+    const [statsRes, examRes, trendRes] = await Promise.all([
       statsApi.dashboard(),
-      examApi.getList()
+      examApi.getList(),
+      statsApi.trend(30),
     ])
     stats.value = statsRes.data
     exams.value = examRes.data.filter(e => !e.is_passed).slice(0, 2)
+    trend.value = trendRes.data.trend || []
   } catch (e) {
     console.error(e)
   }
@@ -149,7 +211,7 @@ onMounted(loadData)
   gap: 20px;
 }
 
-/* ===== 倒计时横幅：统一靛蓝/蓝青家族，替代原玫红 ===== */
+/* ===== 倒计时横幅 ===== */
 .countdown-banner {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -169,7 +231,6 @@ onMounted(loadData)
 .countdown-card.省考 {
   background: linear-gradient(130deg, #0ea5e9 0%, #0891b2 60%, #06b6d4 100%);
 }
-/* 装饰：右上柔和光斑 + 左下细网格 */
 .countdown-card::before {
   content: '';
   position: absolute;
@@ -204,7 +265,6 @@ onMounted(loadData)
   font-size: 13px;
   opacity: 0.88;
   margin-bottom: 10px;
-  display: flex; align-items: center; gap: 6px;
 }
 .cd-number {
   font-size: 46px;
@@ -224,7 +284,7 @@ onMounted(loadData)
   background: rgba(255,255,255,0.12);
 }
 
-/* ===== 统计卡片：数字同色系，可点击跳转 ===== */
+/* ===== 统计卡片 ===== */
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -266,12 +326,13 @@ onMounted(loadData)
 .stat-card.warning .stat-num { color: var(--warning); }
 .stat-label { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 
-.dual-row {
+/* ===== 趋势 + 快捷操作 ===== */
+.main-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 2fr 1fr;
   gap: 16px;
+  align-items: stretch;
 }
-
 .card {
   background: var(--bg-elevated);
   border-radius: var(--radius-lg);
@@ -282,9 +343,54 @@ onMounted(loadData)
 .card-header {
   padding: 16px 20px;
   border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .card-header h3 { margin: 0; font-size: 15px; font-weight: 600; color: var(--text-primary); }
 .card-body { padding: 16px 20px; }
+.trend-sum { font-size: 12px; color: var(--text-tertiary); }
+.trend-chart { width: 100%; height: 220px; }
+
+.quick-list { display: flex; flex-direction: column; gap: 10px; }
+.quick-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s;
+  color: inherit;
+  width: 100%;
+}
+.quick-row:hover {
+  transform: translateX(3px);
+  border-color: var(--border-base);
+  box-shadow: var(--shadow-sm);
+}
+.qb-icon {
+  width: 40px; height: 40px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+}
+.qb-icon .el-icon { font-size: 20px; }
+.quick-row.primary .qb-icon { background: var(--primary-bg); color: var(--primary); }
+.quick-row.success .qb-icon { background: var(--success-bg); color: var(--success); }
+.quick-row.warning .qb-icon { background: var(--warning-bg); color: var(--warning); }
+.quick-row.info .qb-icon { background: var(--info-bg); color: var(--info); }
+.qb-text { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.qb-text b { font-size: 13.5px; color: var(--text-primary); }
+.qb-text i { font-style: normal; font-size: 12px; color: var(--text-tertiary); }
+.qb-arrow { color: var(--text-tertiary); font-size: 14px; }
+
+/* ===== 模块概览 + 薄弱点 ===== */
+.dual-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
 
 .module-bar { margin-bottom: 14px; }
 .module-bar:last-child { margin-bottom: 0; }
@@ -317,7 +423,6 @@ onMounted(loadData)
   gap: 12px;
   padding: 10px 0;
   border-bottom: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
 }
 .weak-item:last-child { border-bottom: none; }
 .weak-rank {
@@ -341,47 +446,8 @@ onMounted(loadData)
   font-size: 14px;
 }
 
-/* ===== 快捷操作：柔和色块底 + 彩色图标，替代高饱和渐变 ===== */
-.quick-actions {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-.quick-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 18px 12px;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--text-primary);
-  background: var(--bg-elevated);
-  transition: all 0.2s;
-}
-.quick-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--border-base);
-}
-.qb-icon {
-  width: 44px; height: 44px;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 12px;
-}
-.qb-icon .el-icon { font-size: 22px; }
-.quick-btn.primary .qb-icon { background: var(--primary-bg); color: var(--primary); }
-.quick-btn.success .qb-icon { background: var(--success-bg); color: var(--success); }
-.quick-btn.warning .qb-icon { background: var(--warning-bg); color: var(--warning); }
-.quick-btn.info .qb-icon { background: var(--info-bg); color: var(--info); }
-
-/* 响应式 */
 @media (max-width: 900px) {
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
-  .dual-row, .countdown-banner { grid-template-columns: 1fr; }
-  .quick-actions { grid-template-columns: repeat(2, 1fr); }
+  .dual-row, .countdown-banner, .main-grid { grid-template-columns: 1fr; }
 }
 </style>
