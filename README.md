@@ -120,15 +120,23 @@ git clone https://github.com/ERRRC/xingcezhenti.git
 
 > 截图来自本地运行实例（`http://localhost:7080`）。
 
-| 页面 | 预览 |
-|------|------|
-| **首页看板** — 考试倒计时 / 统计概览 / 30 天录入趋势 / 快捷操作 | ![首页看板](docs/screenshots/dashboard.jpg) |
-| **真题库对接** — 2962 份历年试卷按模块浏览，题目含公式图直渲 | ![真题库对接](docs/screenshots/question-bank.jpg) |
-| **智能复习** — FSRS 刷卡模式：空格翻面、1-4 评分、即时反馈下次复习时间 | ![智能复习](docs/screenshots/review.jpg) |
-| **可视化大屏** — 雷达 / 趋势 / 错题分布 / 学习热力图 | ![可视化大屏](docs/screenshots/visualization.jpg) |
-| **题目录入** — 三步流程：复制提示词 → 粘贴 AI 返回 → 解析预览并入库 | ![题目录入](docs/screenshots/question-input.jpg) |
-| **行测知识库** — 知识卡片列表 / 模块导航 / 类型筛选 / 考点定位树 | ![行测知识库](docs/screenshots/knowledge.jpg) |
-| **提示词模板管理** — 六大模块提示词 / 通用+专属双模板体系 | ![提示词模板管理](docs/screenshots/prompts.jpg) |
+<table>
+  <tr>
+    <td width="50%"><b>首页看板</b> — 考试倒计时 / 统计概览 / 30 天录入趋势 / 快捷操作<br><img src="docs/screenshots/dashboard.jpg" width="100%"/></td>
+    <td width="50%"><b>真题库对接</b> — 2962 份历年试卷按模块浏览，公式图直渲<br><img src="docs/screenshots/question-bank.jpg" width="100%"/></td>
+  </tr>
+  <tr>
+    <td width="50%"><b>智能复习</b> — FSRS 刷卡：空格翻面、1-4 评分、即时反馈<br><img src="docs/screenshots/review.jpg" width="100%"/></td>
+    <td width="50%"><b>可视化大屏</b> — 雷达 / 趋势 / 错题分布 / 学习热力图<br><img src="docs/screenshots/visualization.jpg" width="100%"/></td>
+  </tr>
+  <tr>
+    <td width="50%"><b>题目录入</b> — 复制提示词 → 粘贴 AI 返回 → 解析入库<br><img src="docs/screenshots/question-input.jpg" width="100%"/></td>
+    <td width="50%"><b>行测知识库</b> — 知识卡片 / 模块导航 / 类型筛选 / 考点树<br><img src="docs/screenshots/knowledge.jpg" width="100%"/></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><b>提示词模板管理</b> — 六大模块提示词 / 通用+专属双模板体系<br><img src="docs/screenshots/prompts.jpg" width="66%"/></td>
+  </tr>
+</table>
 
 > 更多页面截图与命名规范见 [docs/screenshots](docs/screenshots/README.md)。
 
@@ -136,9 +144,8 @@ git clone https://github.com/ERRRC/xingcezhenti.git
 
 ## 🔒 数据与隐私
 
-- 所有数据保存在本地 `data/gongkao.db`（SQLite），**不联网、不上传、无遥测**。
-- `data/`、`xingcezhenti/` 均已被 `.gitignore` 忽略，**你的数据库、真题仓库与导出文件不会被提交到仓库**。
-- 迁移 / 备份：直接复制整个项目目录或仅 `data/gongkao.db` 即可。
+- 所有数据保存在本地 `data/gongkao.db`（SQLite），**不联网、不上传、无遥测**，AI 解析完全解耦，可放心在任意环境使用。
+- 备份与迁移极其简单：复制 `data/gongkao.db` 一个文件，或在系统内一键备份 / 导出 JSON、Markdown、Anki 牌组。
 
 ---
 
