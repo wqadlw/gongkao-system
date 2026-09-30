@@ -183,11 +183,11 @@ def get_recommendation(db: Session) -> list:
 
 def get_exam_countdowns(db: Session) -> list:
     """获取考试倒计时列表"""
-    now = datetime.now()
+    today = datetime.now().date()
     exams = db.query(ExamCountdown).filter(ExamCountdown.is_active == True).all()
     result = []
     for e in exams:
-        days_left = (e.exam_date - now).days if e.exam_date else 0
+        days_left = (e.exam_date.date() - today).days if e.exam_date else 0
         result.append({
             "id": e.id, "name": e.name, "exam_type": e.exam_type,
             "exam_date": e.exam_date.strftime("%Y-%m-%d") if e.exam_date else "",

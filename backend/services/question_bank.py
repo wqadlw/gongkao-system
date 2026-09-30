@@ -83,13 +83,30 @@ def _clean_option_text(text):
     return text.replace("✅", "").rstrip()
 
 
+def safe_bank_file(module_dir: str, filename: str) -> str:
+    """校验模块与文件名，返回试卷文件的绝对路径；非法或不存在抛 ValueError
+
+    module 必须是预定义模块目录，filename 只取 basename 并强制落在仓库内。
+    """
+    if module_dir not in MODULE_DIRS:
+        raise ValueError("模块目录不存在")
+    name = os.path.basename(filename or "")
+    if not name.endswith(".md"):
+        raise ValueError("试卷文件不存在")
+    path = os.path.normpath(os.path.join(BANK_DIR, module_dir, name))
+    root = os.path.normpath(BANK_DIR)
+    if not path.startswith(root + os.sep) or not os.path.isfile(path):
+        raise ValueError("试卷文件不存在")
+    return path
+
+
 def parse_bank_file(filename, module_dir):
     """解析单个试卷 md → {meta, materials, questions}
 
     questions 每项: {no, qid, subtype, material_no, stem, options, answer, analysis}
     options 每项: {label, text, correct}
     """
-    path = os.path.join(BANK_DIR, module_dir, filename)
+    path = safe_bank_file(module_dir, filename)
     with open(path, "r", encoding="utf-8") as f:
         text = f.read()
     meta = _parse_meta(text)

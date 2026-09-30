@@ -12,13 +12,13 @@ router = APIRouter(prefix="/api/exam", tags=["考试倒计时"])
 @router.get("/list")
 def get_exams(db: Session = Depends(get_db)):
     exams = db.query(ExamCountdown).order_by(ExamCountdown.exam_date.asc()).all()
-    now = datetime.now()
+    today = datetime.now().date()
     return [{
         "id": e.id, "name": e.name, "exam_type": e.exam_type,
         "exam_date": e.exam_date.strftime("%Y-%m-%d") if e.exam_date else "",
-        "days_left": (e.exam_date - now).days if e.exam_date else 0,
+        "days_left": (e.exam_date.date() - today).days if e.exam_date else 0,
         "remark": e.remark, "is_active": e.is_active,
-        "is_passed": e.exam_date < now if e.exam_date else False,
+        "is_passed": e.exam_date.date() < today if e.exam_date else False,
     } for e in exams]
 
 

@@ -53,16 +53,25 @@ def list_backups():
     return backups
 
 
+def _safe_backup_path(filename: str) -> str:
+    """把文件名限定在 backups 目录内：只取 basename，规范化后强制前缀校验"""
+    backup_root = os.path.normpath(os.path.join(os.path.dirname(DB_PATH), "backups"))
+    name = os.path.basename(filename or "")
+    if not name:
+        raise HTTPException(status_code=400, detail="非法备份文件名")
+    path = os.path.normpath(os.path.join(backup_root, name))
+    if not path.startswith(backup_root + os.sep):
+        raise HTTPException(status_code=400, detail="非法备份文件名")
+    return path
+
+
 class RestoreRequest(BaseModel):
     filename: str
 
 
 @router.post("/restore")
-def restore_backup(req: dict, db: Session = Depends(get_db)):
-    filename = req.get("filename")
-    if not filename:
-        raise HTTPException(status_code=400, detail="请指定备份文件名")
-    backup_path = os.path.join(os.path.dirname(DB_PATH), "backups", filename)
+def restore_backup(req: RestoreRequest, db: Session = Depends(get_db)):
+    backup_path = _safe_backup_path(req.filename)
     if not os.path.exists(backup_path):
         raise HTTPException(status_code=404, detail="备份文件不存在")
     shutil.copy2(backup_path, DB_PATH)
@@ -71,7 +80,7 @@ def restore_backup(req: dict, db: Session = Depends(get_db)):
 
 @router.delete("/delete")
 def delete_backup(filename: str, db: Session = Depends(get_db)):
-    backup_path = os.path.join(os.path.dirname(DB_PATH), "backups", filename)
+    backup_path = _safe_backup_path(filename)
     if os.path.exists(backup_path):
         os.remove(backup_path)
         return {"message": "删除成功"}

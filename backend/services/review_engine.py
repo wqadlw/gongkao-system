@@ -119,10 +119,12 @@ def calculate_review_stats(questions: list) -> dict:
         elif status == "learning":
             stats["learning"] += 1
         elif status == "due":
-            if q.next_review_time and q.next_review_time <= today_end:
-                stats["due_today"] += 1
-            else:
+            # 到期但早于今天 0 点的算"逾期"，其余算"今日到期"
+            today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            if q.next_review_time and q.next_review_time < today_start:
                 stats["overdue"] += 1
+            else:
+                stats["due_today"] += 1
         elif status == "mastered":
             stats["mastered"] += 1
     return stats

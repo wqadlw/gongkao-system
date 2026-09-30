@@ -37,6 +37,8 @@ def bank_files(
 ):
     if not is_available():
         raise HTTPException(status_code=404, detail="未找到 xingcezhenti 仓库目录")
+    if module not in [m["dir"] for m in list_modules()]:
+        raise HTTPException(status_code=404, detail="模块目录不存在")
     module_path = os.path.join(BANK_DIR, module)
     if not os.path.isdir(module_path):
         raise HTTPException(status_code=404, detail="模块目录不存在")
@@ -65,13 +67,11 @@ def bank_files(
 def bank_file_detail(module: str, name: str, db: Session = Depends(get_db)):
     if not is_available():
         raise HTTPException(status_code=404, detail="未找到 xingcezhenti 仓库目录")
-    module_path = os.path.join(BANK_DIR, module)
-    path = os.path.join(module_path, name)
-    root = os.path.normpath(BANK_DIR)
-    if not os.path.normpath(path).startswith(root + os.sep) or not os.path.isfile(path):
-        raise HTTPException(status_code=404, detail="试卷文件不存在")
 
-    parsed = parse_bank_file(name, module)
+    try:
+        parsed = parse_bank_file(name, module)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     # 标记已导入的题目
     qids = [q["qid"] for q in parsed["questions"] if q["qid"]]
     imported_qids = set()
@@ -98,7 +98,10 @@ class BankImportRequest(BaseModel):
 def bank_import(req: BankImportRequest, db: Session = Depends(get_db)):
     if not is_available():
         raise HTTPException(status_code=404, detail="未找到 xingcezhenti 仓库目录")
-    parsed = parse_bank_file(req.name, req.module)
+    try:
+        parsed = parse_bank_file(req.name, req.module)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     questions = parsed["questions"]
     if req.indexes:
         wanted = set(req.indexes)
