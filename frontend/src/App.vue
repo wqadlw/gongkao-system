@@ -34,10 +34,11 @@
 
         <div class="top-spacer"></div>
 
-        <div v-if="nearestExam" class="top-countdown" :title="nearestExam.name">
-          <el-icon><Timer /></el-icon>
-          <span class="cd-num">{{ nearestExam.days_left }}<i>天</i></span>
-          <span class="cd-type">{{ nearestExam.exam_type }}</span>
+        <div v-if="nearestExam" class="top-countdown" :class="countdownUrgency" :title="`${nearestExam.name} · ${nearestExam.exam_date}`">
+          <span class="tcd-label"><el-icon><Timer /></el-icon>距{{ nearestExam.exam_type }}</span>
+          <span class="tcd-divider"></span>
+          <span class="tcd-num">{{ nearestExam.days_left }}</span>
+          <span class="tcd-unit">天</span>
         </div>
 
         <button class="icon-btn" @click="store.toggleDarkMode()" :title="darkMode ? '切换浅色' : '切换深色'">
@@ -98,6 +99,13 @@ const darkMode = computed(() => store.darkMode)
 const nearestExam = computed(() => {
   const active = store.examCountdowns.filter(e => !e.is_passed && e.days_left >= 0)
   return active.length > 0 ? active[0] : null
+})
+const countdownUrgency = computed(() => {
+  if (!nearestExam.value) return ''
+  const d = nearestExam.value.days_left
+  if (d <= 30) return 'urgent'
+  if (d <= 90) return 'soon'
+  return 'calm'
 })
 
 function doSearch() {
@@ -203,14 +211,27 @@ onMounted(() => {
 }
 .top-spacer { flex: 1; }
 .top-countdown {
-  display: flex; align-items: center; gap: 6px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  color: #fff; padding: 6px 14px; border-radius: 999px; font-size: 12px; flex-shrink: 0;
+  display: flex; align-items: center; gap: 7px;
+  color: #fff; padding: 5px 14px 5px 12px; border-radius: 999px;
+  flex-shrink: 0; cursor: default; user-select: none;
 }
-.top-countdown .el-icon { font-size: 14px; }
-.cd-num { font-weight: 800; font-size: 15px; }
-.cd-num i { font-size: 10px; font-weight: 400; margin-left: 1px; font-style: normal; }
-.cd-type { opacity: 0.9; }
+.top-countdown.calm {
+  background: linear-gradient(135deg, #475569 0%, #64748b 100%);
+  opacity: 0.92;
+}
+.top-countdown.soon {
+  background: linear-gradient(135deg, #2563eb 0%, #0891b2 100%);
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+}
+.top-countdown.urgent {
+  background: linear-gradient(135deg, #dc2626 0%, #f97316 100%);
+  box-shadow: 0 2px 10px rgba(220, 38, 38, 0.3);
+}
+.tcd-label { display: flex; align-items: center; gap: 4px; font-size: 11px; opacity: 0.85; white-space: nowrap; }
+.tcd-label .el-icon { font-size: 13px; }
+.tcd-divider { width: 1px; height: 14px; background: rgba(255, 255, 255, 0.35); }
+.tcd-num { font-size: 18px; font-weight: 800; line-height: 1; letter-spacing: -0.5px; }
+.tcd-unit { font-size: 11px; opacity: 0.85; }
 .icon-btn {
   background: none; border: none; font-size: 17px; cursor: pointer;
   padding: 7px 9px; border-radius: var(--radius-sm); transition: background 0.2s;
