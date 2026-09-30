@@ -4,7 +4,7 @@ import json
 import shutil
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db, DB_PATH, Question, Note, PromptTemplate, MockExam, StudyStage, ReviewLog, Category, DailyStat, ExamCountdown
@@ -130,14 +130,12 @@ def export_questions_md(db: Session = Depends(get_db)):
             lines.append(f"\n### 解题步骤\n{q.step_detail}\n")
         lines.append("---\n")
 
-    content = "\n".join(lines)
-    export_dir = os.path.join(os.path.dirname(DB_PATH), "exports")
-    os.makedirs(export_dir, exist_ok=True)
+    # 直接从内存返回文件流，不落盘（避免动态路径写文件）
     filename = f"questions_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-    filepath = os.path.join(export_dir, filename)
-    with open(filepath, "w", encoding="utf-8") as f:
-        f.write(content)
-    return FileResponse(filepath, filename=filename, media_type="text/markdown")
+    return Response(
+        content="\n".join(lines), media_type="text/markdown",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/export/notes/md")
@@ -147,11 +145,8 @@ def export_notes_md(db: Session = Depends(get_db)):
     for n in notes:
         lines.append(n.note_content)
         lines.append("\n---\n")
-    content = "\n".join(lines)
-    export_dir = os.path.join(os.path.dirname(DB_PATH), "exports")
-    os.makedirs(export_dir, exist_ok=True)
     filename = f"notes_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-    filepath = os.path.join(export_dir, filename)
-    with open(filepath, "w", encoding="utf-8") as f:
-        f.write(content)
-    return FileResponse(filepath, filename=filename, media_type="text/markdown")
+    return Response(
+        content="\n".join(lines), media_type="text/markdown",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

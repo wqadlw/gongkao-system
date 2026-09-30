@@ -110,10 +110,16 @@ export const backupApi = {
   exportAll: () => api.get('/backup/export/all'),
   exportQuestions: () => api.get('/backup/export/questions/md', { responseType: 'blob' }),
   exportNotes: () => api.get('/backup/export/notes/md', { responseType: 'blob' }),
+  exportAnki: () => api.get('/anki/export', { responseType: 'blob', timeout: 300000 }),
 }
 
-export const searchApi = {
-  search: (q, limit = 15) => api.get('/search', { params: { q, limit } }),
+export const bankApi = {
+  status: () => api.get('/question-bank/status', { timeout: 60000 }),
+  files: (params) => api.get('/question-bank/files', { params, timeout: 120000 }),
+  file: (params) => api.get('/question-bank/file', { params, timeout: 120000 }),
+  import: (data) => api.post('/question-bank/import', data, { timeout: 300000 }),
+  datasets: () => api.get('/question-bank/datasets', { timeout: 60000 }),
+  importDataset: (data) => api.post('/question-bank/import-dataset', data, { timeout: 300000 }),
 }
 
 export default api

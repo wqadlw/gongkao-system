@@ -4,3 +4,5 @@ sqlalchemy==2.0.23
 pydantic==2.5.2
 python-multipart==0.0.6
 aiofiles==23.2.1
+fsrs>=5.0
+genanki>=0.13

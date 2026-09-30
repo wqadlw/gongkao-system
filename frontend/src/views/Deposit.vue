@@ -2,7 +2,7 @@
   <div class="deposit-page">
     <div class="page-header">
       <div>
-        <h2>🔍 解析结果预览 · 核对并入库</h2>
+        <h2><el-icon><Search /></el-icon> 解析结果预览 · 核对并入库</h2>
         <p class="sub">核对题面与考点，勾选要沉淀的<strong>独立知识卡片</strong>，一并入库到题库、行测知识库、行测解题库</p>
       </div>
       <span class="badge">{{ mode === 'new' ? '🆕 新解析（未入库）' : (mode === 'existing' ? '已有题目' : '待处理') }} · 待处理 {{ totalPending }}</span>
@@ -33,7 +33,7 @@
         <!-- 空态 -->
         <div class="card" v-if="mode === 'empty'">
           <div class="card-body empty-state">
-            <div class="es-icon">📭</div>
+            <div class="es-icon"><el-icon><Message /></el-icon></div>
             <div>没有待核对的题目。请从左侧「待处理」选择，或去
               <router-link to="/question-input">题目录入</router-link>
               粘贴 AI 解析（点击「解析」即跳转到本页预览）。
@@ -63,13 +63,13 @@
           <div class="card-body" v-loading="parsing">
             <!-- 题目 -->
             <div class="review-box">
-              <div class="rb-label">📋 题目（核对题面）</div>
+              <div class="rb-label"><el-icon><Document /></el-icon> 题目（核对题面）</div>
               <div class="rb-content md-body" v-html="md(parsed.question_raw || '')"></div>
             </div>
 
             <!-- 模块 & 考点路径 -->
             <div class="cat-path-box">
-              <div class="cp-label">📂 题目将归类到</div>
+              <div class="cp-label"><el-icon><FolderOpened /></el-icon> 题目将归类到</div>
               <div class="cp-path">
                 <template v-for="(seg, i) in effectivePath" :key="i">
                   <span class="cp-seg">{{ seg }}</span>
@@ -129,7 +129,7 @@
             <!-- 候选知识卡片 -->
             <div class="cand-area">
               <div class="cand-head">
-                <h3>🧩 候选知识卡片（勾选后沉淀）</h3>
+                <h3><el-icon><CollectionTag /></el-icon> 候选知识卡片（勾选后沉淀）</h3>
                 <div class="cand-stats" v-if="hasCandidates">
                   <span>已选 知识库 <b>{{ kgSelCount }}</b> / 解题库 <b>{{ slSelCount }}</b></span>
                   <label class="sel-all"><input type="checkbox" :checked="allSelected" @change="toggleAll" /><span>全选/取消</span></label>
@@ -183,7 +183,7 @@
             <span class="ab-hint" v-else>将随题目一并沉淀所选知识卡片</span>
             <button class="btn-default" @click="backToInput" v-if="mode === 'new'">返回修改</button>
             <button class="btn-primary" :disabled="saving" @click="confirmDeposit">
-              {{ saving ? '处理中…' : '✅ 确认入库' }}
+              {{ saving ? '处理中…' : '' }}<el-icon><CircleCheck /></el-icon> 确认入库
             </button>
           </div>
         </div>

@@ -1,7 +1,7 @@
 <template>
   <div class="countdown-page">
     <div class="page-header">
-      <h2>⏰ 考试倒计时</h2>
+      <h2><el-icon><Timer /></el-icon> 考试倒计时</h2>
       <button class="btn-primary" @click="showCreate = true">+ 添加考试</button>
     </div>
 
@@ -19,7 +19,7 @@
           <div class="exam-days passed" v-else>
             <span class="days-num">已结束</span>
           </div>
-          <div class="exam-date">📅 {{ exam.exam_date }}</div>
+          <div class="exam-date"><el-icon><Calendar /></el-icon> {{ exam.exam_date }}</div>
           <div class="exam-remark" v-if="exam.remark">{{ exam.remark }}</div>
           <div class="exam-actions">
             <button class="btn-text" @click="editExam(exam)">编辑</button>
@@ -31,7 +31,7 @@
 
     <!-- 备考建议 -->
     <div class="card" v-if="nearestExam">
-      <div class="card-header"><h3>📋 备考阶段建议</h3></div>
+      <div class="card-header"><h3><el-icon><Document /></el-icon> 备考阶段建议</h3></div>
       <div class="card-body">
         <div class="advice-list">
           <div class="advice-item" v-if="nearestExam.days_left > 180">

@@ -2,7 +2,7 @@
   <div class="review-page">
     <div class="page-header">
       <div>
-        <h2>🔄 智能复习中心</h2>
+        <h2><el-icon><Refresh /></el-icon> 智能复习中心</h2>
         <p class="sub">按记忆曲线复习，掌握一类题目的思路与技巧</p>
       </div>
       <div class="mode-tabs">
@@ -31,13 +31,13 @@
       <div class="progress-track"><div class="progress-fill" :style="{ width: ((currentIndex) / Math.max(dueList.length, 1) * 100) + '%' }"></div></div>
 
       <div class="review-question">
-        <div class="q-label">📝 题目</div>
+        <div class="q-label"><el-icon><Document /></el-icon> 题目</div>
         <div class="q-text md-body" v-html="md(currentQuestion.question_raw || '（无题干）')"></div>
       </div>
 
       <div class="review-answer" :class="{ opened: showAnswer }">
         <button class="answer-toggle" @click="showAnswer = !showAnswer">
-          {{ showAnswer ? '🙈 收起答案与解析' : '👁️ 点击查看答案与解析' }}
+          <el-icon><Hide v-if="showAnswer" /><View v-else /></el-icon> {{ showAnswer ? '收起答案与解析' : '点击查看答案与解析' }}
         </button>
         <div v-if="showAnswer" class="answer-section">
           <div class="answer-line">
@@ -56,15 +56,15 @@
       </div>
 
       <div class="review-actions">
-        <button class="review-btn again" @click="submitReview('again')">😵 完全忘记</button>
-        <button class="review-btn hard" @click="submitReview('hard')">😣 困难</button>
-        <button class="review-btn good" @click="submitReview('good')">😊 良好</button>
-        <button class="review-btn easy" @click="submitReview('easy')">😎 简单</button>
+        <button class="review-btn again" @click="submitReview('again')">完全忘记</button>
+        <button class="review-btn hard" @click="submitReview('hard')">困难</button>
+        <button class="review-btn good" @click="submitReview('good')">良好</button>
+        <button class="review-btn easy" @click="submitReview('easy')">简单</button>
       </div>
     </div>
 
     <div v-else class="empty-state">
-      <div class="empty-icon">🎉</div>
+      <div class="empty-icon"><el-icon><CircleCheckFilled /></el-icon></div>
       <div class="empty-text">复习队列已清空</div>
       <div class="empty-sub">保持节奏，继续录入与复习！</div>
       <button class="btn-primary" @click="$router.push('/question-input')">录入新题</button>
@@ -129,7 +129,7 @@ async function submitReview(result) {
       showAnswer.value = false
     } else {
       currentQuestion.value = null
-      ElMessage.success('🎉 本轮复习完成！')
+      ElMessage.success('本轮复习完成！')
     }
     const statsRes = await reviewApi.getStats()
     reviewStats.value = statsRes.data

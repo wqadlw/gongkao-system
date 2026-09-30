@@ -1,7 +1,7 @@
 {
   "name": "gongkao-xingce-v2",
   "version": "2.0.0",
-  "description": "公考行测个人结构化知识库系统 v2 - Markdown 结构化解析版",
+  "description": "公考行测个人结构化知识库系统 v2 - JSON结构化解析版",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
+    "animate.css": "^4.1.1",
     "axios": "^1.6.5",
     "dayjs": "^1.11.10",
     "echarts": "^5.4.3",

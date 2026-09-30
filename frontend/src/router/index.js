@@ -7,6 +7,7 @@ const routes = [
   { path: '/question-input', name: 'QuestionInput', component: () => import('../views/QuestionInput.vue'), meta: { title: '题目录入' } },
   { path: '/deposit', name: 'Deposit', component: () => import('../views/Deposit.vue'), meta: { title: '解析沉淀' } },
   { path: '/question-list', name: 'QuestionList', component: () => import('../views/QuestionList.vue'), meta: { title: '题库列表' } },
+  { path: '/question-bank', name: 'QuestionBank', component: () => import('../views/QuestionBank.vue'), meta: { title: '真题库对接' } },
   { path: '/knowledge', name: 'Knowledge', component: () => import('../views/Knowledge.vue'), meta: { title: '行测知识库' } },
   { path: '/solve-library', name: 'SolveLibrary', component: () => import('../views/SolveLibrary.vue'), meta: { title: '行测解题库' } },
   { path: '/question/:id', name: 'QuestionDetail', component: () => import('../views/QuestionDetail.vue'), meta: { title: '题目详情' } },
@@ -15,7 +16,6 @@ const routes = [
   { path: '/review', name: 'Review', component: () => import('../views/Review.vue'), meta: { title: '智能复习' } },
   { path: '/stages', name: 'Stages', component: () => import('../views/Stages.vue'), meta: { title: '备考阶段' } },
   { path: '/visualization', name: 'Visualization', component: () => import('../views/Visualization.vue'), meta: { title: '可视化大屏' } },
-  { path: '/search', name: 'Search', component: () => import('../views/Search.vue'), meta: { title: '全局搜索' } },
   { path: '/countdown', name: 'Countdown', component: () => import('../views/Countdown.vue'), meta: { title: '考试倒计时' } },
   { path: '/backup', name: 'Backup', component: () => import('../views/Backup.vue'), meta: { title: '备份导出' } },
 ]

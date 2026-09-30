@@ -2,10 +2,10 @@
   <div class="viz-page" v-loading="loading">
     <div class="page-header">
       <div>
-        <h2>📊 学习可视化大屏</h2>
+        <h2><el-icon><TrendCharts /></el-icon> 学习可视化大屏</h2>
         <p class="sub">薄弱点、掌握度与学习节奏一目了然</p>
       </div>
-      <button class="btn-default" @click="loadAll">🔄 刷新</button>
+      <button class="btn-default" @click="loadAll"><el-icon><Refresh /></el-icon> 刷新</button>
     </div>
 
     <div class="stat-grid">
@@ -17,28 +17,28 @@
 
     <div class="chart-grid">
       <div class="card">
-        <div class="card-header"><h3>🎯 六大模块掌握度雷达</h3></div>
+        <div class="card-header"><h3><el-icon><Aim /></el-icon> 六大模块掌握度雷达</h3></div>
         <div class="card-body"><v-chart :option="radarOption" style="height: 360px" autoresize /></div>
       </div>
       <div class="card">
-        <div class="card-header"><h3>📈 录入趋势（近30天）</h3></div>
+        <div class="card-header"><h3><el-icon><TrendCharts /></el-icon> 录入趋势（近30天）</h3></div>
         <div class="card-body"><v-chart :option="trendOption" style="height: 360px" autoresize /></div>
       </div>
     </div>
 
     <div class="chart-grid">
       <div class="card">
-        <div class="card-header"><h3>⚠️ 错题分布（按模块）</h3></div>
+        <div class="card-header"><h3><el-icon><Warning /></el-icon> 错题分布（按模块）</h3></div>
         <div class="card-body"><v-chart :option="pieOption" style="height: 340px" autoresize /></div>
       </div>
       <div class="card">
-        <div class="card-header"><h3>🔥 薄弱考点 TOP（越高越弱）</h3></div>
+        <div class="card-header"><h3><el-icon><Aim /></el-icon> 薄弱考点 TOP（越高越弱）</h3></div>
         <div class="card-body"><v-chart :option="weakOption" style="height: 340px" autoresize /></div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-header"><h3>📅 学习日历热力图</h3></div>
+      <div class="card-header"><h3><el-icon><Calendar /></el-icon> 学习日历热力图</h3></div>
       <div class="card-body">
         <v-chart :option="heatOption" style="height: 220px" autoresize />
         <div class="heatmap-legend">
@@ -51,11 +51,11 @@
     </div>
 
     <div class="card">
-      <div class="card-header"><h3>💡 个性化备考推荐</h3></div>
+      <div class="card-header"><h3><el-icon><Lightbulb /></el-icon> 个性化备考推荐</h3></div>
       <div class="card-body">
         <div class="recommend-list">
           <div v-for="(r, i) in (data.recommendation || [])" :key="i" class="recommend-item">
-            <span class="rec-icon">{{ r.type === 'practice' ? '📝' : r.type === 'review' ? '🔄' : r.type === 'error_review' ? '⚠️' : '💡' }}</span>
+            <span class="rec-icon"><el-icon><EditPen v-if="r.type === 'practice'" /><RefreshRight v-else-if="r.type === 'review'" /><Warning v-else-if="r.type === 'error_review'" /><Lightbulb v-else /></el-icon></span>
             <span>{{ r.message }}</span>
           </div>
           <div v-if="!(data.recommendation || []).length" class="empty">暂无推荐，继续录入题目获取个性化建议</div>

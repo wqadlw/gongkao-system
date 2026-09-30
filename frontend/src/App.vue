@@ -3,16 +3,19 @@
     <!-- 左侧统一导航栏 -->
     <aside class="sidebar" :class="{ collapsed: store.isSidebarCollapsed }">
       <div class="side-brand">
-        <div class="brand-logo"><Reading /></div>
+        <BrandLogo />
         <span class="brand-text">公考行测知识库</span>
       </div>
 
       <nav class="side-nav">
-        <router-link v-for="item in menuItems" :key="item.path" :to="item.path"
-                     class="nav-item" active-class="active" :title="item.label">
-          <el-icon class="nav-ico"><component :is="item.icon" /></el-icon>
-          <span class="nav-label">{{ item.label }}</span>
-        </router-link>
+        <div v-for="group in menuGroups" :key="group.label" class="nav-group">
+          <div class="nav-group-title">{{ group.label }}</div>
+          <router-link v-for="item in group.items" :key="item.path" :to="item.path"
+                       class="nav-item" active-class="active" :title="item.label">
+            <el-icon class="nav-ico"><component :is="item.icon" /></el-icon>
+            <span class="nav-label">{{ item.label }}</span>
+          </router-link>
+        </div>
       </nav>
     </aside>
 
@@ -26,7 +29,7 @@
 
         <div class="top-search">
           <el-icon class="search-ico"><Search /></el-icon>
-          <input ref="searchInput" v-model="searchKw" @keyup.enter="doSearch" placeholder="搜索题目、知识点、解题技巧…  (按 S)" />
+          <input v-model="searchKw" @keyup.enter="doSearch" placeholder="搜索题目、知识点…" />
         </div>
 
         <div class="top-spacer"></div>
@@ -40,13 +43,7 @@
         <button class="icon-btn" @click="store.toggleDarkMode()" :title="darkMode ? '切换浅色' : '切换深色'">
           <el-icon><Moon v-if="darkMode" /><Sunny v-else /></el-icon>
         </button>
-
-        <button class="icon-btn" @click="showHelp = true" title="快捷键帮助 (?)">
-          <el-icon><QuestionFilled /></el-icon>
-        </button>
       </header>
-
-      <ShortcutHelp v-model="showHelp" />
 
       <!-- 内容 -->
       <main class="content">
@@ -61,38 +58,39 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from './stores/app'
-import { useShortcuts } from './composables/useShortcuts'
-import ShortcutHelp from './components/ShortcutHelp.vue'
+import BrandLogo from './components/BrandLogo.vue'
 
 const store = useAppStore()
 const route = useRoute()
 const router = useRouter()
 
-const showHelp = ref(false)
-const searchInput = ref(null)
-function focusSearch() {
-  nextTick(() => searchInput.value && searchInput.value.focus())
-}
-useShortcuts({ onHelp: () => (showHelp.value = true), onSearch: focusSearch })
-
-const menuItems = [
-  { path: '/dashboard', icon: 'DataLine', label: '首页看板' },
-  { path: '/question-input', icon: 'EditPen', label: '题目录入' },
-  { path: '/deposit', icon: 'Upload', label: '核对并入库' },
-  { path: '/question-list', icon: 'Collection', label: '题库列表' },
-  { path: '/knowledge', icon: 'Reading', label: '行测知识库' },
-  { path: '/solve-library', icon: 'Lightning', label: '行测解题库' },
-  { path: '/errors', icon: 'Warning', label: '错题集' },
-  { path: '/review', icon: 'Refresh', label: '智能复习' },
-  { path: '/notes', icon: 'Notebook', label: '笔记管理' },
-  { path: '/visualization', icon: 'TrendCharts', label: '可视化大屏' },
-  { path: '/countdown', icon: 'Timer', label: '考试倒计时' },
-  { path: '/prompts', icon: 'Document', label: '提示词管理' },
-  { path: '/stages', icon: 'Calendar', label: '备考阶段' },
-  { path: '/backup', icon: 'Files', label: '备份导出' },
+const menuGroups = [
+  { label: '学习', items: [
+    { path: '/dashboard', icon: 'DataLine', label: '首页看板' },
+    { path: '/question-input', icon: 'EditPen', label: '题目录入' },
+    { path: '/deposit', icon: 'Upload', label: '核对并入库' },
+    { path: '/question-list', icon: 'Collection', label: '题库列表' },
+    { path: '/question-bank', icon: 'Notebook', label: '真题库对接' },
+  ]},
+  { label: '资料库', items: [
+    { path: '/knowledge', icon: 'Reading', label: '行测知识库' },
+    { path: '/solve-library', icon: 'Lightning', label: '行测解题库' },
+    { path: '/notes', icon: 'Notebook', label: '笔记管理' },
+    { path: '/prompts', icon: 'Document', label: '提示词管理' },
+  ]},
+  { label: '复习巩固', items: [
+    { path: '/review', icon: 'Refresh', label: '智能复习' },
+    { path: '/errors', icon: 'Warning', label: '错题集' },
+  ]},
+  { label: '数据与规划', items: [
+    { path: '/visualization', icon: 'TrendCharts', label: '可视化大屏' },
+    { path: '/countdown', icon: 'Timer', label: '考试倒计时' },
+    { path: '/stages', icon: 'Calendar', label: '备考阶段' },
+    { path: '/backup', icon: 'Files', label: '备份导出' },
+  ]},
 ]
 
 const searchKw = ref('')
@@ -104,7 +102,7 @@ const nearestExam = computed(() => {
 
 function doSearch() {
   if (!searchKw.value.trim()) return
-  router.push({ path: '/search', query: { q: searchKw.value.trim() } })
+  router.push({ path: '/question-list', query: { keyword: searchKw.value.trim() } })
 }
 
 onMounted(() => {
@@ -144,21 +142,25 @@ onMounted(() => {
   overflow: hidden;
   white-space: nowrap;
 }
-.brand-logo {
-  width: 32px; height: 32px; flex-shrink: 0;
-  border-radius: 9px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-  color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-}
 .brand-text {
   font-size: 15px; font-weight: 800;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #0891b2 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 
-.side-nav { padding: 10px 10px 4px; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.side-nav { padding: 10px 10px 4px; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; overflow-y: auto; }
+.nav-group { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+.nav-group:last-child { margin-bottom: 0; }
+.nav-group-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 2px;
+  padding: 6px 12px 4px;
+  white-space: nowrap;
+}
+.sidebar.collapsed .nav-group-title { display: none; }
+.sidebar.collapsed .nav-group { margin-bottom: 4px; }
 .nav-item {
   display: flex; align-items: center; gap: 12px;
   padding: 9px 12px; border-radius: var(--radius-md);

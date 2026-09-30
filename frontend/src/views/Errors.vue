@@ -1,8 +1,8 @@
 <template>
   <div class="errors-page">
     <div class="page-header">
-      <h2>⚠️ 错题集</h2>
-      <button class="btn-primary" @click="$router.push('/review?mode=error')">🔄 错题重做</button>
+      <h2><el-icon><Warning /></el-icon> 错题集</h2>
+      <button class="btn-primary" @click="$router.push('/review?mode=error')"><el-icon><RefreshRight /></el-icon> 错题重做</button>
     </div>
 
     <div class="stat-grid">
@@ -51,7 +51,7 @@
               <span v-if="isOverdue(q)" class="status-tag overdue">逾期</span>
               <span v-else class="status-tag normal">正常</span>
             </td>
-            <td @click.stop><button class="btn-icon" @click="$router.push(`/question/${q.id}`)">👁️</button></td>
+            <td @click.stop><button class="btn-icon" @click="$router.push(`/question/${q.id}`)"><el-icon><View /></el-icon></button></td>
           </tr>
           <tr v-if="questions.length === 0"><td colspan="7" class="empty">暂无错题</td></tr>
         </tbody>

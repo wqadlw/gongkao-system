@@ -289,6 +289,27 @@ class ExamCountdown(Base):
     create_time = Column(DateTime, default=datetime.now)
 
 
+# ========== 表8：真题库导入记录（xingcezhenti 对接：qid → 本系统题目 ID，用于浏览标记与导入去重） ==========
+class BankImport(Base):
+    __tablename__ = "bank_imports"
+    id = Column(Integer, primary_key=True, index=True)
+    bank_qid = Column(String(50), default="", index=True)   # 仓库内题目 qid
+    question_id = Column(Integer, default=0)                # 本系统 questions.id
+    source_file = Column(String(300), default="")           # 来源试卷 md 文件名
+    module = Column(String(50), default="")                 # 所属行测模块
+    create_time = Column(DateTime, default=datetime.now)
+
+
+# ========== 表9：FSRS 复习状态（question_id → FSRS Card JSON 序列化，由 create_all 自动建表） ==========
+class FsrsState(Base):
+    __tablename__ = "fsrs_states"
+    id = Column(Integer, primary_key=True, index=True)
+    question_id = Column(Integer, default=0, index=True)
+    card_json = Column(Text, default="")             # FSRS Card.to_dict() 序列化
+    desired_retention = Column(Float, default=0.9)   # 目标记忆保持率
+    update_time = Column(DateTime, default=datetime.now)
+
+
 # ========== 初始化函数 ==========
 def init_database():
     Base.metadata.create_all(bind=engine)

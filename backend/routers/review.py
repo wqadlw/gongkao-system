@@ -1,10 +1,15 @@
-"""复习管理路由 v2"""
+"""复习管理路由 v3：FSRS 调度优先，固定周期兜底"""
+import json
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import datetime
-from database import get_db, Question, ReviewLog
-from services.review_engine import calculate_next_review, update_master_level, get_review_status, calculate_review_stats
+from database import get_db, Question, ReviewLog, FsrsState
+from services.review_engine import (
+    calculate_next_review, update_master_level, get_review_status, calculate_review_stats,
+    schedule_fsrs, fsrs_card_summary, FSRS_AVAILABLE, DEFAULT_RETENTION,
+)
 from services.stats_engine import update_daily_stat
 
 router = APIRouter(prefix="/api/review", tags=["智能复习"])
@@ -62,14 +67,49 @@ def submit_review(req: ReviewSubmit, db: Session = Depends(get_db)):
     q.review_count = review_info["review_count"]
     q.next_review_time = review_info["next_review_time"]
 
+    # FSRS 调度：按每题记忆状态动态安排；失败或未安装 fsrs 时保持固定周期结果
+    engine = "legacy"
+    fsrs_summary = {}
+    if FSRS_AVAILABLE:
+        try:
+            st = db.query(FsrsState).filter(FsrsState.question_id == q.id).first()
+            card_dict = json.loads(st.card_json) if st and st.card_json else None
+            retention = st.desired_retention if st and st.desired_retention else DEFAULT_RETENTION
+            card_dict, due_local, interval_days = schedule_fsrs(
+                card_dict, req.review_result, retention, req.cost_time)
+            if not st:
+                st = FsrsState(question_id=q.id)
+                db.add(st)
+            st.card_json = json.dumps(card_dict, ensure_ascii=False)
+            st.desired_retention = retention
+            st.update_time = datetime.now()
+            q.next_review_time = due_local
+            engine = "FSRS"
+            fsrs_summary = fsrs_card_summary(card_dict)
+        except Exception as e:
+            print(f"[FSRS 调度失败，本次回退固定周期] {e}")
+
     db.commit()
     update_daily_stat(db, "review")
 
     return {
         "message": "复习记录已提交",
+        "engine": engine,
         "new_master_level": new_master,
-        "next_review_time": review_info["next_review_time"].strftime("%Y-%m-%d %H:%M"),
-        "days_until_next": review_info["days_until_next"],
+        "next_review_time": q.next_review_time.strftime("%Y-%m-%d %H:%M") if q.next_review_time else "",
+        "days_until_next": review_info["days_until_next"] if engine == "legacy" else round(
+            (q.next_review_time - datetime.now()).total_seconds() / 86400, 2),
+        "fsrs": fsrs_summary,
+    }
+
+
+@router.get("/engine")
+def engine_info():
+    return {
+        "engine": "FSRS" if FSRS_AVAILABLE else "legacy",
+        "fsrs_available": FSRS_AVAILABLE,
+        "desired_retention": DEFAULT_RETENTION,
+        "description": "FSRS 动态记忆调度" if FSRS_AVAILABLE else "固定周期（未安装 fsrs 库）",
     }
 
 

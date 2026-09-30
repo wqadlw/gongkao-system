@@ -2,10 +2,10 @@
   <div class="notes-page">
     <div class="page-header">
       <div>
-        <h2>📓 笔记管理</h2>
+        <h2><el-icon><Notebook /></el-icon> 笔记管理</h2>
         <p class="sub">按模块筛选、检索与管理你的备考笔记</p>
       </div>
-      <button class="btn-default" @click="exportNotes">📥 导出全部</button>
+      <button class="btn-default" @click="exportNotes"><el-icon><Download /></el-icon> 导出全部</button>
     </div>
 
     <div class="filter-bar">
@@ -27,8 +27,8 @@
           <h3 class="note-title">{{ cardTitle(note) }}</h3>
           <div class="note-actions" @click.stop>
             <button class="btn-icon" :class="{ active: note.is_collect }" @click="toggleCollect(note)" title="收藏">★</button>
-            <button class="btn-icon" @click="editNote(note)" title="编辑">✏️</button>
-            <button class="btn-icon danger" @click="deleteNote(note)" title="删除">🗑️</button>
+            <button class="btn-icon" @click="editNote(note)" title="编辑"><el-icon><Edit /></el-icon></button>
+            <button class="btn-icon danger" @click="deleteNote(note)" title="删除"><el-icon><Delete /></el-icon></button>
           </div>
         </div>
         <div class="note-body">
@@ -47,7 +47,7 @@
           </div>
         </div>
       </div>
-      <div v-if="notes.length === 0" class="empty">暂无笔记，在题目详情页点击「✨ 一键生成笔记」即可生成</div>
+      <div v-if="notes.length === 0" class="empty">暂无笔记，在题目详情页点击「一键生成笔记」即可生成</div>
     </div>
 
     <!-- 详情抽屉 -->

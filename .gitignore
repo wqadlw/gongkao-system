@@ -50,3 +50,11 @@ Thumbs.db
 # ── Tooling caches ────────────────────────────────────
 .eslintcache
 .cache/
+
+# ── 真题仓库克隆与第三方数据集（体积大/需单独授权，不入库） ──
+xingcezhenti/
+data/ceval/
+data/question_sources/
+data/ceval_tree.json
+.mimosa/
+check_note.py

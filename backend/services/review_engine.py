@@ -1,13 +1,65 @@
 """
-艾宾浩斯复习算法引擎 v2
+复习算法引擎 v3：FSRS（Free Spaced Repetition Scheduler）优先，艾宾浩斯固定周期兜底
+FSRS 基于 DSR 记忆模型（难度/稳定性/可提取性），按每题记忆状态动态安排复习时间
 """
-from datetime import datetime, timedelta
+import json
+from datetime import datetime, timedelta, timezone
 
 REVIEW_CYCLES = [0, 1, 2, 4, 7, 15, 30, 60]
 
 REVIEW_RESULT_IMPACT = {
     "again": -2, "hard": 0, "good": 1, "easy": 2,
 }
+
+# ===== FSRS 接入（pip install fsrs），不可用时自动回退固定周期 =====
+try:
+    from fsrs import Scheduler, Card, Rating
+    FSRS_AVAILABLE = True
+except ImportError:
+    FSRS_AVAILABLE = False
+
+FSRS_RATING_MAP = {"again": "Again", "hard": "Hard", "good": "Good", "easy": "Easy"}
+
+DEFAULT_RETENTION = 0.9
+
+
+def get_scheduler(desired_retention: float = DEFAULT_RETENTION):
+    """学习期步长 1/10 分钟，再学习 10 分钟；阶段内短间隔，毕业后进入 FSRS 长间隔调度"""
+    return Scheduler(
+        desired_retention=desired_retention,
+        learning_steps=(timedelta(minutes=1), timedelta(minutes=10)),
+        relearning_steps=(timedelta(minutes=10),),
+    )
+
+
+def schedule_fsrs(card_dict: dict | None, result: str, desired_retention: float = DEFAULT_RETENTION, cost_time: int = 0):
+    """对单张 FSRS 卡执行一次复习调度
+
+    card_dict 为 None 表示首次复习（新建卡片）。
+    返回 (new_card_dict, due_local_naive, interval_days)
+    """
+    rating = getattr(Rating, FSRS_RATING_MAP.get(result, "Good"))
+    scheduler = get_scheduler(desired_retention)
+    card = Card.from_dict(card_dict) if card_dict else Card()
+    # py-fsrs 要求 review_datetime 为 UTC 时区感知时间
+    new_card, _ = scheduler.review_card(card, rating, review_datetime=datetime.now(timezone.utc), review_duration=cost_time or None)
+
+    due = new_card.due
+    due_local = due.astimezone().replace(tzinfo=None) if due.tzinfo else due
+    interval_days = max(0.0, (due_local - datetime.now()).total_seconds() / 86400)
+    return new_card.to_dict(), due_local, interval_days
+
+
+def fsrs_card_summary(card_dict: dict) -> dict:
+    """提炼卡片记忆状态供前端展示"""
+    if not card_dict:
+        return {}
+    return {
+        "stability": round(card_dict.get("stability") or 0, 2),
+        "difficulty": round(card_dict.get("difficulty") or 0, 2),
+        "reps": card_dict.get("reps") or 0,
+        "lapses": card_dict.get("lapses") or 0,
+    }
 
 
 def calculate_next_review(review_count: int, master_level: int, last_result: str = "good") -> dict:

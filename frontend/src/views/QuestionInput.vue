@@ -2,7 +2,7 @@
   <div class="input-page">
     <div class="page-header">
       <div>
-        <h2>✏️ 题目录入</h2>
+        <h2><el-icon><EditPen /></el-icon> 题目录入</h2>
         <p class="sub">把外部 AI 的解析粘贴回来，系统自动判定模块与考点并归类，你只需确认</p>
       </div>
       <span class="badge">智能归类 · 模块由 AI 自动判定</span>
@@ -33,7 +33,7 @@
           <div class="card-header">
             <h3>① 按模块复制专属提示词</h3>
             <span v-if="matchedPrompt" class="mod-badge" :style="modStyle(effectiveModule)">{{ effectiveModule || '通用' }}</span>
-            <button class="btn-primary small" @click="copyPrompt" :disabled="!matchedPrompt">📋 复制</button>
+            <button class="btn-primary small" @click="copyPrompt" :disabled="!matchedPrompt"><el-icon><CopyDocument /></el-icon> 复制</button>
           </div>
           <div class="card-body">
             <!-- 先选模块：决定用哪套提示词 -->
@@ -51,7 +51,7 @@
             <pre v-if="matchedPrompt" class="prompt-content">{{ matchedPrompt.content }}</pre>
             <div v-else class="tree-loading">提示词加载中…</div>
             <div class="prompt-tip">
-              💡 复制后粘贴给外部 AI。选了模块会用<strong>该模块专属提示词</strong>（分析重点与例题更贴合）；
+              <el-icon><Lightbulb /></el-icon> 复制后粘贴给外部 AI。选了模块会用<strong>该模块专属提示词</strong>（分析重点与例题更贴合）；
               不选则 AI 自动判定模块并套用通用模板。AI 按一~六节作答，公式用 LaTeX。
             </div>
           </div>
@@ -65,7 +65,7 @@
             <h3>② 粘贴 AI 返回结果</h3>
             <div>
               <button class="btn-default small" @click="aiContent = ''">清空</button>
-              <button class="btn-primary" @click="parseAI" :disabled="!aiContent">🔍 解析</button>
+              <button class="btn-primary" @click="parseAI" :disabled="!aiContent"><el-icon><Search /></el-icon> 解析</button>
             </div>
           </div>
           <div class="card-body">
@@ -76,14 +76,14 @@
               rows="18"></textarea>
 
             <div v-if="parseValidation" :class="['parse-result', parseValidation.ok ? 'success' : 'warning']">
-              <span>{{ parseValidation.ok ? '✅' : '⚠️' }} {{ parseValidation.message }}</span>
+              <span><el-icon :class="parseValidation.ok ? 'is-ok' : 'is-warn'"><CircleCheckFilled v-if="parseValidation.ok" /><WarningFilled v-else /></el-icon> {{ parseValidation.message }}</span>
             </div>
           </div>
         </div>
 
         <!-- 解析完成：跳转「核对并入库」页（/deposit）核对题面 + 勾选知识卡片 -->
         <div class="parsed-ok" v-if="parsedPreview">
-          ✅ 解析完成，正在打开<router-link to="/deposit">「核对并入库」页面</router-link>…（如未自动跳转请点此）
+          <el-icon><CircleCheckFilled /></el-icon> 解析完成，正在打开<router-link to="/deposit">「核对并入库」页面</router-link>…（如未自动跳转请点此）
         </div>
       </div>
     </div>

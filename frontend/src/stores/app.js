@@ -3,7 +3,8 @@ import { ref } from 'vue'
 import { categoryApi, examApi } from '../api'
 
 export const useAppStore = defineStore('app', () => {
-  const darkMode = ref(localStorage.getItem('gk_darkMode') === 'true')
+  // 亮色为默认主题：使用 gk_theme 键（light/dark），旧 gk_darkMode 记录不再生效
+  const darkMode = ref(localStorage.getItem('gk_theme') === 'dark')
   const categoryTree = ref([])   // 题型树（嵌套）
   const categoryFlat = ref([])   // 题型树（扁平，便于查找）
   const examCountdowns = ref([])
@@ -12,7 +13,7 @@ export const useAppStore = defineStore('app', () => {
 
   function toggleDarkMode() {
     darkMode.value = !darkMode.value
-    localStorage.setItem('gk_darkMode', darkMode.value)
+    localStorage.setItem('gk_theme', darkMode.value ? 'dark' : 'light')
     document.body.classList.toggle('dark-theme', darkMode.value)
   }
 

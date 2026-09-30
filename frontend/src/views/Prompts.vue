@@ -1,12 +1,12 @@
 <template>
   <div class="prompts-page">
     <div class="page-header">
-      <h2>📝 提示词模板管理</h2>
+      <h2><el-icon><Document /></el-icon> 提示词模板管理</h2>
       <button class="btn-primary" @click="showCreate = true">+ 新建模板</button>
     </div>
 
     <div class="info-banner">
-      <strong>💡 使用流程：</strong>复制通用提示词 → 粘贴到外部AI + 发送题目截图 → AI<strong>自动判定模块与考点</strong>、按「题目 + 一~六节」结构化Markdown作答（支持LaTeX公式） → 粘贴回"题目录入"页 → 系统自动归类入库
+      <strong><el-icon><Lightbulb /></el-icon> 使用流程：</strong>复制通用提示词 → 粘贴到外部AI + 发送题目截图 → AI<strong>自动判定模块与考点</strong>、按「题目 + 一~六节」结构化Markdown作答（支持LaTeX公式） → 粘贴回"题目录入"页 → 系统自动归类入库
     </div>
 
     <!-- 模块筛选 -->
@@ -23,15 +23,15 @@
       <div v-for="p in prompts" :key="p.id" class="prompt-card">
         <div class="prompt-header">
           <div class="prompt-title">
-            <span v-if="p.is_locked" class="lock-badge">🔒内置</span>
-            <span v-if="p.is_pinned" class="pin-badge">📌</span>
+            <span v-if="p.is_locked" class="lock-badge"><el-icon><Lock /></el-icon>内置</span>
+            <span v-if="p.is_pinned" class="pin-badge"><el-icon><Top /></el-icon></span>
             {{ p.name }}
           </div>
           <div class="prompt-actions">
-            <button class="btn-icon" @click="copyPrompt(p)" title="复制纯提示词">📋</button>
-            <button class="btn-icon" @click="openBuild(p)" title="组装提问文本">🔧</button>
-            <button v-if="!p.is_locked" class="btn-icon" @click="editPrompt(p)">✏️</button>
-            <button v-if="!p.is_locked" class="btn-icon danger" @click="deletePrompt(p)">🗑️</button>
+            <button class="btn-icon" @click="copyPrompt(p)" title="复制纯提示词"><el-icon><CopyDocument /></el-icon></button>
+            <button class="btn-icon" @click="openBuild(p)" title="组装提问文本"><el-icon><Tools /></el-icon></button>
+            <button v-if="!p.is_locked" class="btn-icon" @click="editPrompt(p)"><el-icon><Edit /></el-icon></button>
+            <button v-if="!p.is_locked" class="btn-icon danger" @click="deletePrompt(p)"><el-icon><Delete /></el-icon></button>
           </div>
         </div>
         <div class="prompt-meta">
@@ -39,7 +39,7 @@
           <span v-if="p.tag" class="tag-default">{{ p.tag }}</span>
         </div>
         <div class="prompt-preview">{{ p.content.slice(0, 150) }}...</div>
-        <div class="prompt-remark" v-if="p.remark">💡 {{ p.remark }}</div>
+        <div class="prompt-remark" v-if="p.remark"><el-icon><Lightbulb /></el-icon> {{ p.remark }}</div>
       </div>
     </div>
 
@@ -47,7 +47,7 @@
     <div v-if="showBuild" class="modal-overlay" @click="showBuild = false">
       <div class="modal large" @click.stop>
         <div class="modal-header">
-          <h3>🔧 组装提问文本 - {{ currentPrompt?.name }}</h3>
+          <h3><el-icon><Tools /></el-icon> 组装提问文本 - {{ currentPrompt?.name }}</h3>
           <button class="btn-text" @click="showBuild = false">✕</button>
         </div>
         <div class="modal-body">
@@ -59,7 +59,7 @@
           <div class="built-result" v-if="builtText">
             <div class="built-header">
               <span>组装结果（复制后发送给AI）</span>
-              <button class="btn-primary small" @click="copyBuilt">📋 复制</button>
+              <button class="btn-primary small" @click="copyBuilt"><el-icon><CopyDocument /></el-icon> 复制</button>
             </div>
             <pre class="built-text">{{ builtText }}</pre>
           </div>

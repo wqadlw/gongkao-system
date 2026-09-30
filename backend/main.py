@@ -11,11 +11,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from database import init_all, DB_PATH
-from routers import categories, prompts, questions, review, notes, study, stats, backup, exam, knowledge, solve_library, search
+from routers import categories, prompts, questions, review, notes, study, stats, backup, exam, knowledge, solve_library, question_bank, anki_export
 
 app = FastAPI(
     title="公考行测知识库系统 v2",
-    description="纯本地离线公考行测学习系统 - Markdown 结构化解析版",
+    description="纯本地离线公考行测学习系统 - JSON结构化解析版",
     version="2.0.0",
 )
 
@@ -38,14 +38,15 @@ app.include_router(backup.router)
 app.include_router(exam.router)
 app.include_router(knowledge.router)
 app.include_router(solve_library.router)
-app.include_router(search.router)
+app.include_router(question_bank.router)
+app.include_router(anki_export.router)
 
 
 @app.on_event("startup")
 def startup_event():
     print("=" * 60)
     print("  公考行测个人结构化知识库系统 v2.0")
-    print("  纯本地离线 · Markdown结构化解析 · 零AI联网")
+    print("  纯本地离线 · JSON结构化解析 · 零AI联网")
     print("=" * 60)
     init_all()
     print(f"  数据库路径：{DB_PATH}")

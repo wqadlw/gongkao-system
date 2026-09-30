@@ -1,7 +1,7 @@
 <template>
   <div class="stages-page">
     <div class="page-header">
-      <h2>📅 备考阶段管理</h2>
+      <h2><el-icon><Calendar /></el-icon> 备考阶段管理</h2>
       <button class="btn-primary" @click="showCreate = true">+ 新增阶段</button>
     </div>
 
@@ -28,7 +28,7 @@
             <td><span class="status-tag" :class="s.is_active ? 'active' : 'inactive'">{{ s.is_active ? '进行中' : '已结束' }}</span></td>
             <td>
               <button class="btn-default small" @click="toggleActive(s)">{{ s.is_active ? '结束' : '激活' }}</button>
-              <button class="btn-icon danger" @click="deleteStage(s)">🗑️</button>
+              <button class="btn-icon danger" @click="deleteStage(s)"><el-icon><Delete /></el-icon></button>
             </td>
           </tr>
           <tr v-if="stages.length === 0"><td colspan="7" class="empty">暂无备考阶段</td></tr>

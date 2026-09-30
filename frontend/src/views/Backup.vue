@@ -1,11 +1,11 @@
 <template>
   <div class="backup-page">
     <div class="page-header">
-      <h2>💾 数据备份与导出</h2>
+      <h2><el-icon><Box /></el-icon> 数据备份与导出</h2>
     </div>
 
     <div class="card">
-      <div class="card-header"><h3>📦 数据库信息</h3></div>
+      <div class="card-header"><h3><el-icon><FolderOpened /></el-icon> 数据库信息</h3></div>
       <div class="card-body">
         <div class="info-list">
           <div class="info-row"><span class="info-label">数据库路径</span><span class="info-value">{{ info.db_path }}</span></div>
@@ -14,14 +14,14 @@
           <div class="info-row"><span class="info-label">存储方式</span><span class="info-value">本地SQLite单文件</span></div>
         </div>
         <div class="action-buttons">
-          <button class="btn-primary" @click="createBackup">💾 立即备份</button>
-          <button class="btn-default" @click="loadBackups">🔄 刷新备份列表</button>
+          <button class="btn-primary" @click="createBackup"><el-icon><Box /></el-icon> 立即备份</button>
+          <button class="btn-default" @click="loadBackups"><el-icon><Refresh /></el-icon> 刷新备份列表</button>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-header"><h3>📋 备份记录</h3></div>
+      <div class="card-header"><h3><el-icon><Document /></el-icon> 备份记录</h3></div>
       <div class="card-body">
         <table class="data-table">
           <thead>
@@ -34,7 +34,7 @@
               <td class="time-cell">{{ b.time }}</td>
               <td>
                 <button class="btn-default small" @click="restoreBackup(b)">恢复</button>
-                <button class="btn-icon danger" @click="deleteBackup(b)">🗑️</button>
+                <button class="btn-icon danger" @click="deleteBackup(b)"><el-icon><Delete /></el-icon></button>
               </td>
             </tr>
             <tr v-if="backups.length === 0"><td colspan="4" class="empty">暂无备份记录</td></tr>
@@ -44,12 +44,13 @@
     </div>
 
     <div class="card">
-      <div class="card-header"><h3>📤 数据导出</h3></div>
+      <div class="card-header"><h3><el-icon><Upload /></el-icon> 数据导出</h3></div>
       <div class="card-body">
         <div class="export-buttons">
-          <button class="btn-default" @click="exportAll">📋 导出全部数据(JSON)</button>
-          <button class="btn-default" @click="exportQuestions">📝 导出题目(Markdown)</button>
-          <button class="btn-default" @click="exportNotes">📓 导出笔记(Markdown)</button>
+          <button class="btn-default" @click="exportAll"><el-icon><CopyDocument /></el-icon> 导出全部数据(JSON)</button>
+          <button class="btn-default" @click="exportQuestions"><el-icon><Document /></el-icon> 导出题目(Markdown)</button>
+          <button class="btn-default" @click="exportNotes"><el-icon><Notebook /></el-icon> 导出笔记(Markdown)</button>
+          <button class="btn-default" @click="exportAnki"><el-icon><Collection /></el-icon> 导出 Anki 牌组(.apkg)</button>
         </div>
       </div>
     </div>
@@ -128,6 +129,19 @@ async function exportNotes() {
     URL.revokeObjectURL(url)
     ElMessage.success('导出成功')
   } catch { ElMessage.error('导出失败') }
+}
+
+async function exportAnki() {
+  try {
+    const res = await backupApi.exportAnki()
+    const url = URL.createObjectURL(new Blob([res.data], { type: 'application/octet-stream' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `gongkao_anki_${Date.now()}.apkg`
+    a.click()
+    URL.revokeObjectURL(url)
+    ElMessage.success('Anki 牌组导出成功，可在 Anki/AnkiDroid 中导入')
+  } catch (e) { ElMessage.error('导出失败：' + (e?.response?.data?.detail || '')) }
 }
 
 onMounted(() => { loadInfo(); loadBackups() })
