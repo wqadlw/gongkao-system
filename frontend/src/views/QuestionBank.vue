@@ -2,7 +2,7 @@
   <div class="bank-page">
     <div class="page-header">
       <h2><el-icon><Collection /></el-icon> 真题库对接</h2>
-      <span v-if="status.available" class="bank-meta">共 {{ totalFileCount }} 份试卷 · {{ status.root }}</span>
+      <span v-if="status.available" class="bank-meta" :title="status.root">共 {{ totalFileCount }} 份试卷 · {{ modulesLabel }}</span>
       <div class="header-spacer"></div>
       <el-button size="small" @click="openDatasetDialog"><el-icon><Box /></el-icon> 数据集导入</el-button>
     </div>
@@ -171,6 +171,7 @@ const datasetLevel1 = ref('')
 const datasetLimit = ref(0)
 
 const totalFileCount = computed(() => status.value.modules.reduce((s, m) => s + m.file_count, 0))
+const modulesLabel = computed(() => status.value.modules.map(m => m.name).join(' / '))
 const currentFileTitle = computed(() => detail.value ? (detail.value.meta['试卷'] || currentFile.value) : '')
 const selectedCount = computed(() => {
   if (!detail.value) return 0
