@@ -82,7 +82,7 @@ def convert(root: Path):
                         "source_url": "https://github.com/ERRRC/kaogongzhentizhengliu",
                     })
 
-    # 材料档案：15-材料/资料分析/*.md
+    # 材料档案：15-材料/<模块>/*.md（sub_path 带"模块/年份"二级分类，年份取自标题）
     cai_liao = root / "15-材料"
     if cai_liao.is_dir():
         for module_dir in sorted(p for p in cai_liao.iterdir() if p.is_dir()):
@@ -92,9 +92,11 @@ def convert(root: Path):
                 content, qids = parse_note(note)
                 if len(content) < 30:
                     continue
+                ym = re.search(r"(20\d{2})", note.stem) or re.search(r"(20\d{2})", content[:300])
+                year = ym.group(1) if ym else "未注年份"
                 items.append({
                     "category": "材料档案",
-                    "sub_path": module_dir.name,
+                    "sub_path": f"{module_dir.name}/{year}",
                     "resource_type": "材料档案",
                     "title": note.stem,
                     "content": content,

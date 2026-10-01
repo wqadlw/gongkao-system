@@ -127,7 +127,18 @@
   ASCII 兜底（backup/anki 导出用的 FileResponse filename 参数无此问题）。
 - 实测：判断推理手册 806KB（7,000+ 考点核心立场全量），常识手册 4KB。
 
-## 十、待办 / 遗留
+## 十、资料库体验优化（用户反馈四连）
+
+用户反馈：①资料分析不该挂在"考点精讲"下 ②材料档案没有分类 ③弹窗要全屏 ④内容太多要收藏与阅读优化。
+
+- **树重构为模块优先**：一级=行测六大模块/申论/面试/经验指南，二级=类型（考点精讲/材料档案/思维导图/外部链接），三级=大类或年份。节点自带 filter 对象（module_prefix/resource_type/category/sub_prefix），前端递归组件 ResourceTree.vue 任意深度渲染。
+- **材料档案细分**：脑库材料笔记无大类标签，但标题含年份 → sub_path 改为 `资料分析/年份`，717 条按年份分面。
+- **收藏**：表加 is_favorite（重建表，重导 11,147），`POST /{id}/favorite` toggle + list favorite 过滤；卡片右上角星标 + 详情收藏 + 侧栏「我的收藏」入口。
+- **弹窗全屏**：dialog fullscreen 切换（页脚+头部双入口），全屏时正文高度 calc(100vh-200px)。
+- 坑：list 端点 module_prefix 需 `sub_path LIKE x% OR category = x`（申论/面试 mindmap 的 sub_path 为空）。
+- 回归 6/6：模块树、材料年份分面、module 过滤(4071)、收藏开/筛/关。
+
+## 十一、待办 / 遗留
 
 - [x] GitHub 网络恢复，积压提交已全部推送（期间再次中断过，均已补齐）
 - [x] SQLite 在线备份 API（create 接口改用 sqlite3.backup）

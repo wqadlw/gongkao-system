@@ -34,36 +34,87 @@ class ResourceBatch(BaseModel):
 
 @router.get("/tree")
 def resource_tree(db: Session = Depends(get_db)):
-    """三级层级聚合：分类 → 模块 → 大类/考点组（按计数降序），驱动左侧导航树"""
-    rows = db.query(Resource.category, Resource.sub_path).all()
+    """模块优先的三级聚合：模块 → 类型 → 大类/年份/主题（每节点自带过滤参数）"""
+    from database import DB_PATH as _db_path  # noqa: F401
+    KNOWN_MODULES = {"政治理论", "常识判断", "言语理解与表达", "数量关系", "判断推理", "资料分析"}
+    TYPE_LABEL = {"mindmap": "思维导图", "考点精讲": "考点精讲", "材料档案": "材料档案", "link": "外部链接"}
+
+    rows = db.query(Resource.category, Resource.resource_type, Resource.sub_path).all()
     tree = {}
-    for cat, sub in rows:
-        node = tree.setdefault(cat, {"count": 0, "children": {}})
-        node["count"] += 1
+    for cat, rtype, sub in rows:
         parts = [p for p in (sub or "").split("/") if p]
-        if parts:
-            lvl1 = node["children"].setdefault(parts[0], {"count": 0, "children": {}})
-            lvl1["count"] += 1
-            if len(parts) > 1:
-                lvl2 = lvl1["children"].setdefault("/".join(parts[1:]), {"count": 0, "children": {}})
-                lvl2["count"] += 1
+        if cat in ("申论", "面试"):
+            module, rest = cat, []
+        elif cat == "经验指南":
+            module, rest = "经验指南", []
+        elif parts and parts[0] in KNOWN_MODULES:
+            module, rest = parts[0], parts[1:]
+        else:
+            module, rest = cat, parts
+        type_label = TYPE_LABEL.get(rtype, rtype)
 
-    def sort_children(children_map):
-        return [
-            {"name": name, "count": info["count"],
-             "children": sort_children(info["children"])}
-            for name, info in sorted(children_map.items(), key=lambda x: -x[1]["count"])
-        ]
+        node = tree.setdefault(module, {"count": 0, "children": {}})
+        node["count"] += 1
+        tnode = node["children"].setdefault(type_label, {"count": 0, "children": {}})
+        tnode["count"] += 1
+        if rest:
+            leaf_key = "/".join(rest)
+            leaf = tnode["children"].setdefault(leaf_key, {"count": 0, "children": {}})
+            leaf["count"] += 1
 
-    order = ["行测", "申论", "面试", "考点精讲", "材料档案", "经验指南"]
+    def build_filter(module, type_label, extra_sub=None):
+        rtype = next((k for k, v in TYPE_LABEL.items() if v == type_label), None)
+        f = {"module_prefix": module}
+        if rtype:
+            f["resource_type"] = rtype
+        if extra_sub and rtype in ("考点精讲", "mindmap", "材料档案"):
+            f["sub_prefix"] = f"{module}/{extra_sub}" if extra_sub != module else extra_sub
+            if rtype == "考点精讲":
+                f["category"] = "考点精讲"
+        if module in ("申论", "面试", "经验指南"):
+            f = {"category": module if module != "经验指南" else "经验指南"}
+            if rtype:
+                f["resource_type"] = rtype
+        return f
+
+    def sort_children(children_map, module, type_label, parent_extra=None):
+        out = []
+        for name, info in sorted(children_map.items(), key=lambda x: -x[1]["count"]):
+            extra = None
+            if type_label == "考点精讲":
+                extra = name                      # 大类
+            elif type_label == "思维导图":
+                extra = name                      # 主题/考点组合（sub_path 余段）
+            elif type_label == "材料档案":
+                extra = name                      # 年份
+            node_filter = build_filter(module, type_label, extra)
+            out.append({
+                "name": name, "count": info["count"],
+                "filter": node_filter,
+                "children": sort_children(info["children"], module, type_label, extra),
+            })
+        return out
+
+    order = ["资料分析", "判断推理", "常识判断", "言语理解与表达", "数量关系", "政治理论", "申论", "面试", "经验指南"]
     items = []
-    for cat in order:
-        if cat in tree:
-            items.append({"name": cat, "count": tree[cat]["count"], "children": sort_children(tree[cat]["children"])})
-    for cat, info in sorted(tree.items(), key=lambda x: -x[1]["count"]):
-        if cat not in order:
-            items.append({"name": cat, "count": info["count"], "children": sort_children(info["children"])})
-    return {"items": items, "total": sum(c["count"] for c in items)}
+    for module in order:
+        if module in tree:
+            info = tree[module]
+            children = sort_children(info["children"], module, None)
+            for child in children:  # 模块层过滤器：该模块下全部
+                child["filter"] = build_filter(module, child["name"])
+                for gc in child.get("children", []):
+                    gc["filter"] = build_filter(module, child["name"], gc["name"] if child["name"] in ("考点精讲", "思维导图", "材料档案") else None)
+            items.append({"name": module, "count": info["count"], "children": children})
+    for module, info in sorted(tree.items(), key=lambda x: -x[1]["count"]):
+        if module not in order:
+            children = sort_children(info["children"], module, None)
+            for child in children:
+                child["filter"] = {"category": module}
+                if child["name"] in TYPE_LABEL:
+                    child["filter"]["resource_type"] = next(k for k, v in TYPE_LABEL.items() if v == child["name"])
+            items.append({"name": module, "count": info["count"], "children": children})
+    return {"items": items, "total": sum(i["count"] for i in items)}
 
 
 @router.get("/categories")
@@ -93,11 +144,15 @@ def resource_list(
     category: Optional[str] = None,
     resource_type: Optional[str] = None,
     sub_prefix: Optional[str] = None,
+    module_prefix: Optional[str] = None,
+    favorite: Optional[int] = None,
     keyword: Optional[str] = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(24, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
+    from sqlalchemy import or_
+
     query = db.query(Resource)
     if category:
         query = query.filter(Resource.category == category)
@@ -105,6 +160,12 @@ def resource_list(
         query = query.filter(Resource.resource_type == resource_type)
     if sub_prefix:
         query = query.filter(Resource.sub_path.like(sub_prefix + "%"))
+    if module_prefix:
+        query = query.filter(
+            or_(Resource.sub_path.like(module_prefix + "%"), Resource.category == module_prefix)
+        )
+    if favorite is not None:
+        query = query.filter(Resource.is_favorite == (1 if favorite else 0))
     if keyword:
         query = query.filter(Resource.title.contains(keyword) | Resource.sub_path.contains(keyword))
     total = query.count()
@@ -121,9 +182,20 @@ def resource_list(
             "qid_count": len(json.loads(r.related_qids)) if r.related_qids else 0,
             "image_path": r.image_path, "file_path": r.file_path,
             "source_url": r.source_url, "source": r.source,
+            "is_favorite": bool(r.is_favorite),
         } for r in rows],
         "total": total, "page": page, "page_size": page_size,
     }
+
+
+@router.post("/{resource_id}/favorite")
+def toggle_favorite(resource_id: int, db: Session = Depends(get_db)):
+    r = db.query(Resource).filter(Resource.id == resource_id).first()
+    if not r:
+        raise HTTPException(status_code=404, detail="资料不存在")
+    r.is_favorite = 0 if r.is_favorite else 1
+    db.commit()
+    return {"is_favorite": bool(r.is_favorite)}
 
 
 @router.get("/image")

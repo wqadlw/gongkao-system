@@ -16,43 +16,21 @@
     </div>
 
     <div class="reslib-layout">
-      <!-- 左侧层级树 -->
+      <!-- 左侧层级树（模块优先） -->
       <aside class="card reslib-side">
-        <button class="cat-item root" :class="{ active: !currentCategory }" @click="selectNode(null)">
+        <button class="cat-item root" :class="{ active: !selectedPath && !onlyFavorite }" @click="selectNode(null)">
           <span>全部资料</span><span class="cat-count">{{ total }}</span>
         </button>
-        <template v-for="rootItem in tree" :key="'r-' + rootItem.name">
-          <button
-            class="cat-item root" :class="{ active: currentCategory === rootItem.name && !subPrefix }"
-            @click="selectNode(rootItem)"
-          >
-            <span class="cat-caret" :class="{ open: expanded[rootItem.name] }" @click.stop="toggleExpand(rootItem.name)">▸</span>
-            <span class="cat-name">{{ rootItem.name }}</span>
-            <span class="cat-count">{{ rootItem.count }}</span>
-          </button>
-          <template v-if="expanded[rootItem.name]">
-            <div v-for="child in rootItem.children" :key="rootItem.name + '/' + child.name" class="tree-lv1">
-              <button
-                class="cat-item" :class="{ active: currentCategory === rootItem.name && subPrefix === child.name }"
-                @click="selectNode(rootItem, child.name)"
-              >
-                <span v-if="child.children.length" class="cat-caret" :class="{ open: expanded[rootItem.name + '/' + child.name] }" @click.stop="toggleExpand(rootItem.name + '/' + child.name)">▸</span>
-                <span class="cat-name">{{ child.name }}</span>
-                <span class="cat-count">{{ child.count }}</span>
-              </button>
-              <template v-if="child.children.length && expanded[rootItem.name + '/' + child.name]">
-                <button
-                  v-for="leaf in child.children" :key="rootItem.name + '/' + child.name + '/' + leaf.name"
-                  class="cat-item lv2" :class="{ active: currentCategory === rootItem.name && subPrefix === child.name + '/' + leaf.name }"
-                  @click="selectNode(rootItem, child.name + '/' + leaf.name)"
-                >
-                  <span class="cat-name">{{ leaf.name }}</span>
-                  <span class="cat-count">{{ leaf.count }}</span>
-                </button>
-              </template>
-            </div>
-          </template>
-        </template>
+        <button class="cat-item root" :class="{ active: onlyFavorite }" @click="toggleFavoriteFilter">
+          <span><el-icon><Star /></el-icon> 我的收藏</span><span class="cat-count">{{ favoriteCount }}</span>
+        </button>
+        <ResourceTree
+          :nodes="tree"
+          :expanded="expanded"
+          :selected-path="selectedPath"
+          @select="onTreeNodeSelect"
+          @toggle="toggleExpand"
+        />
       </aside>
 
       <!-- 右侧列表 -->
@@ -71,6 +49,10 @@
             class="card res-card" :class="{ 'is-text': r.resource_type !== 'mindmap' }"
             @click="openDetail(r)"
           >
+            <span
+              class="fav-star" :class="{ on: r.is_favorite }"
+              title="收藏" @click.stop="toggleFavorite(r)"
+            ><el-icon><StarFilled v-if="r.is_favorite" /><Star v-else /></el-icon></span>
             <template v-if="r.resource_type === 'mindmap'">
               <div class="res-thumb">
                 <img v-if="r.image_path" :src="imageUrl(r.image_path)" :alt="r.title" loading="lazy" />
@@ -107,7 +89,21 @@
     </div>
 
     <!-- 详情 -->
-    <el-dialog v-model="detailVisible" :title="detail?.title || '资料详情'" width="860px" top="4vh">
+    <el-dialog
+      v-model="detailVisible" :title="detail?.title || '资料详情'"
+      :width="dialogFullscreen ? '100%' : '860px'" :fullscreen="dialogFullscreen" top="4vh"
+    >
+      <template #header>
+        <div class="dlg-header">
+          <span class="dlg-title">{{ detail?.title }}</span>
+          <button class="fav-star big" :class="{ on: detail?.is_favorite }" title="收藏" @click="toggleFavorite(detail, false)">
+            <el-icon><StarFilled v-if="detail?.is_favorite" /><Star v-else /></el-icon>
+          </button>
+          <el-button size="small" text @click="dialogFullscreen = !dialogFullscreen">
+            <el-icon><FullScreen /></el-icon> {{ dialogFullscreen ? '退出全屏' : '全屏阅读' }}
+          </el-button>
+        </div>
+      </template>
       <template v-if="detail">
         <div class="detail-meta">
           <span class="res-type">{{ detail.resource_type }}</span>
@@ -122,7 +118,7 @@
         </div>
 
         <!-- 文本类：markdown 正文 -->
-        <div v-if="detail.content" class="detail-content md-body" v-html="md(detail.content)"></div>
+        <div v-if="detail.content" class="detail-content md-body" :class="{ fullscreen: dialogFullscreen }" v-html="md(detail.content)"></div>
 
         <!-- 关联题目 -->
         <div v-if="related.length" class="related">
@@ -138,6 +134,9 @@
         </div>
       </template>
       <template #footer>
+        <el-button @click="dialogFullscreen = !dialogFullscreen">
+          <el-icon><FullScreen /></el-icon> {{ dialogFullscreen ? '退出全屏' : '全屏阅读' }}
+        </el-button>
         <el-button v-if="detail?.source_url" @click="openLink(detail)">
           <el-icon><Link /></el-icon> 打开来源
         </el-button>
@@ -154,6 +153,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { resourceApi } from '../api'
 import { renderMarkdown } from '../utils/md'
+import ResourceTree from '../components/ResourceTree.vue'
 
 const md = renderMarkdown
 
@@ -162,9 +162,10 @@ const typeCounts = ref({})
 const tree = ref([])
 const expanded = ref({})
 const selectedPath = ref('')
-const currentCategory = ref('')
+const currentFilters = ref({})
 const currentType = ref('')
-const subPrefix = ref('')
+const onlyFavorite = ref(false)
+const favoriteCount = ref(0)
 const keyword = ref('')
 const list = ref([])
 const filteredTotal = ref(0)
@@ -175,23 +176,26 @@ const loading = ref(false)
 const detailVisible = ref(false)
 const detail = ref(null)
 const related = ref([])
+const dialogFullscreen = ref(false)
 
 const imageUrl = (p) => '/api/resources/image?path=' + encodeURIComponent(p)
 const fileUrl = (p) => '/api/resources/file?path=' + encodeURIComponent(p)
 
-// 层级树导航：rootItem=一级分类，childPath=其下的前缀（模块 或 模块/大类）
-function selectNode(rootItem, childPath) {
-  if (rootItem) {
-    currentCategory.value = rootItem.name
-    subPrefix.value = childPath || ''
-    selectedPath.value = childPath ? rootItem.name + '/' + childPath : rootItem.name
-    expanded.value[rootItem.name] = true
-    if (childPath) {
-      expanded.value[rootItem.name + '/' + childPath.split('/')[0]] = true
-    }
-  } else {
-    currentCategory.value = ''
-    subPrefix.value = ''
+// 树节点选择：节点自带过滤参数（module_prefix/resource_type/category/sub_prefix）
+function onTreeNodeSelect(node, path) {
+  currentFilters.value = node.filter || {}
+  selectedPath.value = path
+  onlyFavorite.value = false
+  page.value = 1
+  // 自动展开祖先由 keyPrefix 机制处理；展开当前节点
+  expanded.value[path] = true
+  loadList()
+}
+
+function toggleFavoriteFilter() {
+  onlyFavorite.value = !onlyFavorite.value
+  if (onlyFavorite.value) {
+    currentFilters.value = {}
     selectedPath.value = ''
   }
   page.value = 1
@@ -200,6 +204,13 @@ function selectNode(rootItem, childPath) {
 
 function toggleExpand(key) {
   expanded.value[key] = !expanded.value[key]
+}
+
+async function loadFavoriteCount() {
+  try {
+    const res = await resourceApi.list({ favorite: 1, page_size: 1 })
+    favoriteCount.value = res.data.total
+  } catch { /* 忽略 */ }
 }
 
 async function loadCategories() {
@@ -220,10 +231,13 @@ async function loadTree() {
 async function loadList() {
   loading.value = true
   try {
+    const f = currentFilters.value || {}
     const res = await resourceApi.list({
-      category: currentCategory.value || undefined,
-      resource_type: currentType.value || undefined,
-      sub_prefix: subPrefix.value || undefined,
+      category: f.category || undefined,
+      resource_type: currentType.value || f.resource_type || undefined,
+      sub_prefix: f.sub_prefix || undefined,
+      module_prefix: f.module_prefix || undefined,
+      favorite: onlyFavorite.value ? 1 : undefined,
       keyword: keyword.value || undefined,
       page: page.value, page_size: pageSize,
     })
@@ -241,11 +255,22 @@ function onSearchInput() {
 
 watch(currentType, () => { page.value = 1; loadList() })
 
+async function toggleFavorite(r, stop = true) {
+  try {
+    const res = await resourceApi.toggleFavorite(r.id)
+    r.is_favorite = res.data.is_favorite
+    if (detail.value?.id === r.id) detail.value.is_favorite = res.data.is_favorite
+    loadFavoriteCount()
+    if (onlyFavorite.value && stop) loadList()
+  } catch { ElMessage.error('收藏操作失败') }
+}
+
 async function openDetail(r) {
   try {
     const res = await resourceApi.detail(r.id)
     detail.value = res.data
     detailVisible.value = true
+    dialogFullscreen.value = false
     related.value = []
     if (r.qid_count) {
       const qres = await resourceApi.relatedQuestions(r.id)
@@ -259,7 +284,7 @@ function openLink(r) {
 }
 
 onMounted(async () => {
-  await Promise.all([loadCategories(), loadTree(), loadList()])
+  await Promise.all([loadCategories(), loadTree(), loadList(), loadFavoriteCount()])
 })
 </script>
 
@@ -308,7 +333,7 @@ onMounted(async () => {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px;
   min-height: 200px; align-items: start;
 }
-.res-card { padding: 0; overflow: hidden; cursor: pointer; transition: transform 0.18s, box-shadow 0.18s; }
+.res-card { position: relative; padding: 0; overflow: hidden; cursor: pointer; transition: transform 0.18s, box-shadow 0.18s; }
 .res-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
 .res-thumb {
   height: 170px; background: var(--bg-subtle); display: flex; align-items: center;
@@ -343,6 +368,21 @@ onMounted(async () => {
 .detail-img-wrap { max-height: 62vh; overflow: auto; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: var(--bg-subtle); }
 .detail-img-wrap img { width: 100%; display: block; }
 .detail-content { max-height: 62vh; overflow: auto; font-size: 13.5px; }
+.fav-star {
+  position: absolute; top: 8px; right: 8px; z-index: 2;
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.9); color: var(--text-tertiary);
+  cursor: pointer; transition: all 0.15s; border: 1px solid var(--border-light);
+}
+.fav-star:hover { color: var(--warning); transform: scale(1.1); }
+.fav-star.on { color: var(--warning); }
+.fav-star.big { position: static; width: 30px; height: 30px; }
+.dlg-header { display: flex; align-items: center; gap: 12px; padding-right: 24px; }
+.dlg-title { font-size: 16px; font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.detail-content.fullscreen { max-height: calc(100vh - 200px); }
+.detail-content { max-height: 62vh; overflow: auto; }
+
 .related { margin-top: 14px; }
 .related-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
 .related-chips { display: flex; flex-wrap: wrap; gap: 6px; }

@@ -334,6 +334,7 @@ class Resource(Base):
     file_path = Column(String(500), default="")               # 原文件相对路径（可下载）
     source_url = Column(String(500), default="")              # 外链地址
     source = Column(String(300), default="")
+    is_favorite = Column(Integer, default=0)                  # 收藏标记
     create_time = Column(DateTime, default=datetime.now)
 
 
