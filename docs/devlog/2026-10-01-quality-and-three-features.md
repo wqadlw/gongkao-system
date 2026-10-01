@@ -138,7 +138,21 @@
 - 坑：list 端点 module_prefix 需 `sub_path LIKE x% OR category = x`（申论/面试 mindmap 的 sub_path 为空）。
 - 回归 6/6：模块树、材料年份分面、module 过滤(4071)、收藏开/筛/关。
 
-## 十一、待办 / 遗留
+## 十一、资料库性能优化（用户反馈"很卡"）
+
+根因：卡片缩略图直接加载原图（导图 PNG 200KB~1.3MB、2560px 宽），首屏 24 张数 MB
+解码量；图片接口无缓存头，翻页重复下载；列表查询加载大字段。
+
+- 缩略图缓存：image 端点默认返回 Pillow 生成 480px JPEG（q82），缓存于
+  `data/resources/.thumbs/`（mtime 校验失效重建）；详情 `?full=1` 用原图。
+- 缓存头：resources/naoku/question-bank 三个 media 端点统一
+  `Cache-Control: public, max-age=86400`。
+- 列表查询瘦身：with_entities 只取必要列，content 用 substr(150)，
+  qid 数用 SQLite `json_array_length`（空串需 coalesce+nullif 兜底，否则
+  "malformed JSON"）。
+- 实测：缩略图 421KB→8.7KB（48×），缓存命中 3ms，列表 17ms。
+
+## 十二、待办 / 遗留
 
 - [x] GitHub 网络恢复，积压提交已全部推送（期间再次中断过，均已补齐）
 - [x] SQLite 在线备份 API（create 接口改用 sqlite3.backup）

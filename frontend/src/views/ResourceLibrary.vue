@@ -55,7 +55,7 @@
             ><el-icon><StarFilled v-if="r.is_favorite" /><Star v-else /></el-icon></span>
             <template v-if="r.resource_type === 'mindmap'">
               <div class="res-thumb">
-                <img v-if="r.image_path" :src="imageUrl(r.image_path)" :alt="r.title" loading="lazy" />
+                <img v-if="r.image_path" :src="imageUrl(r.image_path)" :alt="r.title" loading="lazy" decoding="async" />
                 <div v-else class="res-thumb-empty"><el-icon><Link /></el-icon></div>
               </div>
               <div class="res-info">
@@ -114,7 +114,7 @@
 
         <!-- 思维导图：大图 -->
         <div v-if="detail.resource_type === 'mindmap' && detail.image_path" class="detail-img-wrap">
-          <img :src="imageUrl(detail.image_path)" :alt="detail.title" />
+          <img :src="fullImageUrl(detail.image_path)" :alt="detail.title" />
         </div>
 
         <!-- 文本类：markdown 正文 -->
@@ -178,7 +178,8 @@ const detail = ref(null)
 const related = ref([])
 const dialogFullscreen = ref(false)
 
-const imageUrl = (p) => '/api/resources/image?path=' + encodeURIComponent(p)
+const imageUrl = (p) => '/api/resources/image?path=' + encodeURIComponent(p) + '&thumb=1'
+const fullImageUrl = (p) => '/api/resources/image?path=' + encodeURIComponent(p) + '&full=1'
 const fileUrl = (p) => '/api/resources/file?path=' + encodeURIComponent(p)
 
 // 树节点选择：节点自带过滤参数（module_prefix/resource_type/category/sub_prefix）

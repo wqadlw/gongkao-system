@@ -203,4 +203,4 @@ def bank_media(path: str = Query(...)):
     if not abs_path:
         raise HTTPException(status_code=404, detail="文件不存在")
     media_type = mimetypes.guess_type(abs_path)[0] or "application/octet-stream"
-    return FileResponse(abs_path, media_type=media_type)
+    return FileResponse(abs_path, media_type=media_type, headers={"Cache-Control": "public, max-age=86400"})

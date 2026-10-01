@@ -169,21 +169,34 @@ def resource_list(
     if keyword:
         query = query.filter(Resource.title.contains(keyword) | Resource.sub_path.contains(keyword))
     total = query.count()
-    # 有预览图的资料（思维导图）排在前面，默认首屏可见图片墙
-    rows = query.order_by(
-        (Resource.image_path == ""), Resource.category, Resource.sub_path, Resource.title
-    ).offset((page - 1) * page_size).limit(page_size).all()
+    # 列表只取必要列（content/related_qids 大字段不入内存，摘要用 substr、题数用 length）
+    from sqlalchemy import func
+
+    rows = (
+        query.with_entities(
+            Resource.id, Resource.category, Resource.sub_path, Resource.title,
+            Resource.description, Resource.resource_type,
+            func.substr(Resource.content, 1, 150),
+            func.json_array_length(func.coalesce(func.nullif(Resource.related_qids, ""), "[]")),
+            Resource.image_path, Resource.file_path,
+            Resource.source_url, Resource.source, Resource.is_favorite,
+        )
+        .order_by(
+            (Resource.image_path == ""), Resource.category, Resource.sub_path, Resource.title
+        )
+        .offset((page - 1) * page_size).limit(page_size).all()
+    )
     return {
         "items": [{
-            "id": r.id, "category": r.category, "sub_path": r.sub_path,
-            "title": r.title, "description": r.description,
-            "resource_type": r.resource_type,
-            "excerpt": (r.content or "")[:150],
-            "qid_count": len(json.loads(r.related_qids)) if r.related_qids else 0,
-            "image_path": r.image_path, "file_path": r.file_path,
-            "source_url": r.source_url, "source": r.source,
-            "is_favorite": bool(r.is_favorite),
-        } for r in rows],
+            "id": rid, "category": cat, "sub_path": sub,
+            "title": title, "description": desc,
+            "resource_type": rtype,
+            "excerpt": excerpt or "",
+            "qid_count": qlen or 0,
+            "image_path": ipath, "file_path": fpath,
+            "source_url": surl, "source": src,
+            "is_favorite": bool(fav),
+        } for (rid, cat, sub, title, desc, rtype, excerpt, qlen, ipath, fpath, surl, src, fav) in rows],
         "total": total, "page": page, "page_size": page_size,
     }
 
@@ -199,12 +212,38 @@ def toggle_favorite(resource_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/image")
-def resource_image(path: str = Query(...)):
+def resource_image(path: str = Query(...), full: int = 0):
+    """图片服务：卡片默认返回缩略图（Pillow 生成，缓存于 .thumbs/），?full=1 返回原图"""
     abs_path = _safe_resource_path(path)
     if not abs_path:
         raise HTTPException(status_code=404, detail="图片不存在")
+    headers = {"Cache-Control": "public, max-age=86400"}
+    if not full:
+        thumb = _get_thumbnail(abs_path)
+        if thumb:
+            return FileResponse(thumb, media_type="image/jpeg", headers=headers)
     from mimetypes import guess_type
-    return FileResponse(abs_path, media_type=guess_type(abs_path)[0] or "image/png")
+    return FileResponse(abs_path, media_type=guess_type(abs_path)[0] or "image/png", headers=headers)
+
+
+def _get_thumbnail(abs_path: str):
+    """生成/复用缩略图（宽 480px JPEG q82）；失败返回 None（回退原图）"""
+    try:
+        from PIL import Image
+    except ImportError:
+        return None
+    rel = os.path.relpath(abs_path, RESOURCES_DIR)
+    thumb_path = os.path.join(RESOURCES_DIR, ".thumbs", rel + ".thumb.jpg")
+    if os.path.isfile(thumb_path) and os.path.getmtime(thumb_path) >= os.path.getmtime(abs_path):
+        return thumb_path
+    try:
+        os.makedirs(os.path.dirname(thumb_path), exist_ok=True)
+        with Image.open(abs_path) as img:
+            img.thumbnail((480, 480))
+            img.convert("RGB").save(thumb_path, "JPEG", quality=82)
+        return thumb_path
+    except Exception:
+        return None
 
 
 @router.get("/file")
@@ -267,7 +306,7 @@ def naoku_media(path: str = Query(...)):
     if not abs_path.startswith(media_root + os.sep) or not os.path.isfile(abs_path):
         raise HTTPException(status_code=404, detail="文件不存在")
     from mimetypes import guess_type
-    return FileResponse(abs_path, media_type=guess_type(abs_path)[0] or "application/octet-stream")
+    return FileResponse(abs_path, media_type=guess_type(abs_path)[0] or "application/octet-stream", headers={"Cache-Control": "public, max-age=86400"})
 
 
 @router.post("/batch")
