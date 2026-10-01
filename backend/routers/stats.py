@@ -60,14 +60,17 @@ def exam_countdown(db: Session = Depends(get_db)):
 @router.get("/all")
 def all_stats(db: Session = Depends(get_db)):
     # 扁平化：聚合端点直接返回数组，供前端可视化大屏按数组消费
+    # 题目全量只查一次，各统计函数复用，避免重复加载整表
+    from database import Question
+    questions = db.query(Question).all()
     return {
-        "dashboard": get_dashboard_stats(db),
-        "radar": get_module_radar(db).get("radar", []),
-        "error_distribution": get_error_distribution(db).get("distribution", []),
+        "dashboard": get_dashboard_stats(db, questions),
+        "radar": get_module_radar(db, questions).get("radar", []),
+        "error_distribution": get_error_distribution(db, questions).get("distribution", []),
         "trend": get_trend_data(db, 30).get("trend", []),
-        "heatmap": get_heatmap_data(db),
+        "heatmap": get_heatmap_data(db, questions=questions),
         "mock_analysis": get_mock_analysis(db),
-        "weak_points": get_weak_points(db, 10),
+        "weak_points": get_weak_points(db, 10, questions),
         "recommendation": get_recommendation(db),
         "exam_countdown": get_exam_countdowns(db),
     }

@@ -417,27 +417,44 @@ def _migrate_columns():
 
 
 def recalc_category_counts(db):
-    """根据 questions 表重新统计每个分类节点的题目数与错题数（按路径前缀匹配）"""
+    """按题目路径前缀重算各分类节点的题目数与错题数。
+
+    用 GROUP BY 聚合一次拿到各完整路径的计数，再为每条路径生成所有前缀键累加，
+    复杂度 O(题目分组数 + 分类数)，替代旧的 分类数×题目数 双重全表循环。
+    """
+    from sqlalchemy import func, case
+
     cats = db.query(Category).all()
-    questions = db.query(Question).all()
-    for c in cats:
-        c.question_count = 0
-        c.error_count = 0
-    for q in questions:
-        qpath = {1: q.level1, 2: q.level2, 3: q.level3, 4: q.level4, 5: q.level5}
-        for c in cats:
-            cpath = {1: c.level1, 2: c.level2, 3: c.level3, 4: c.level4, 5: c.level5}
-            match = True
-            for lvl in range(1, 6):
-                cv = cpath.get(lvl)
-                if cv:
-                    if (qpath.get(lvl) or "") != cv:
-                        match = False
-                        break
-            if match:
-                c.question_count = (c.question_count or 0) + 1
-                if q.is_error:
-                    c.error_count = (c.error_count or 0) + 1
+    rows = (
+        db.query(
+            Question.level1, Question.level2, Question.level3, Question.level4, Question.level5,
+            func.count(Question.id),
+            func.sum(case((Question.is_error == True, 1), else_=0)),
+        )
+        .group_by(Question.level1, Question.level2, Question.level3, Question.level4, Question.level5)
+        .all()
+    )
+
+    prefix_count = {}
+    for l1, l2, l3, l4, l5, cnt, err in rows:
+        path = [l1 or "", l2 or "", l3 or "", l4 or "", l5 or ""]
+        last = 5
+        while last > 0 and not path[last - 1]:
+            last -= 1
+        err = err or 0
+        for i in range(1, last + 1):
+            key = tuple(path[:i])
+            c, e = prefix_count.get(key, (0, 0))
+            prefix_count[key] = (c + cnt, e + err)
+
+    for cat in cats:
+        cpath = [cat.level1 or "", cat.level2 or "", cat.level3 or "", cat.level4 or "", cat.level5 or ""]
+        last = 5
+        while last > 0 and not cpath[last - 1]:
+            last -= 1
+        cnt, err = prefix_count.get(tuple(cpath[:last]), (0, 0))
+        cat.question_count = cnt
+        cat.error_count = err
     db.commit()
 
 

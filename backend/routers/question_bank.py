@@ -170,14 +170,14 @@ def import_dataset(req: DatasetImportRequest, db: Session = Depends(get_db)):
         questions = questions[:req.limit]
 
     level1 = req.level1 or "常识判断"
+    # 一次性取该来源已有题面集合，避免逐题查重的 N+1
+    existing = {r[0] for r in db.query(Question.question_raw).filter(Question.source == req.file).all()}
     imported, skipped = 0, 0
     for q in questions:
         raw_parts = [q["stem"]]
         raw_parts.extend([f"- **{o['label']}**. {o['text']}" for o in q["options"]])
         raw = "\n".join(raw_parts)
-        exists = db.query(Question.id).filter(
-            Question.source == req.file, Question.question_raw == raw).first()
-        if exists:
+        if raw in existing:
             skipped += 1
             continue
         db.add(Question(

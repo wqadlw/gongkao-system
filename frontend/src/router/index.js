@@ -11,6 +11,7 @@ const routes = [
   { path: '/knowledge', name: 'Knowledge', component: () => import('../views/Knowledge.vue'), meta: { title: '行测知识库' } },
   { path: '/solve-library', name: 'SolveLibrary', component: () => import('../views/SolveLibrary.vue'), meta: { title: '行测解题库' } },
   { path: '/question/:id', name: 'QuestionDetail', component: () => import('../views/QuestionDetail.vue'), meta: { title: '题目详情' } },
+  { path: '/search', name: 'Search', component: () => import('../views/Search.vue'), meta: { title: '全局搜索' } },
   { path: '/errors', name: 'Errors', component: () => import('../views/Errors.vue'), meta: { title: '错题集' } },
   { path: '/notes', name: 'Notes', component: () => import('../views/Notes.vue'), meta: { title: '笔记管理' } },
   { path: '/review', name: 'Review', component: () => import('../views/Review.vue'), meta: { title: '智能复习' } },

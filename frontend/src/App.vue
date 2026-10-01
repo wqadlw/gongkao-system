@@ -110,7 +110,7 @@ const countdownUrgency = computed(() => {
 
 function doSearch() {
   if (!searchKw.value.trim()) return
-  router.push({ path: '/question-list', query: { keyword: searchKw.value.trim() } })
+  router.push({ path: '/search', query: { q: searchKw.value.trim() } })
 }
 
 onMounted(() => {

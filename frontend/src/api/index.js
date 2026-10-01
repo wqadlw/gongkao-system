@@ -123,4 +123,8 @@ export const bankApi = {
   importDataset: (data) => api.post('/question-bank/import-dataset', data, { timeout: 300000 }),
 }
 
+export const searchApi = {
+  search: (q, limit) => api.get('/search', { params: { q, limit }, timeout: 60000 }),
+}
+
 export default api

@@ -23,14 +23,14 @@
 
     <EmptyState
       v-else-if="!hasSearched"
-      icon="🔍"
+      icon="Search"
       title="开始你的跨库检索"
       desc="支持题目题干、细分考点、知识卡片标题与内容、解题模板的联合搜索。例如搜「资料分析」「削弱」「图形推理」。"
     />
 
     <EmptyState
       v-else-if="hasSearched && result.total === 0"
-      icon="🫥"
+      icon="SearchOff"
       title="没有匹配结果"
       desc="换个关键词试试，或检查是否存在错别字。当前库为空时请先录入题目。"
     />
@@ -40,7 +40,7 @@
       <div class="result-meta">共找到 <b>{{ result.total }}</b> 条结果（题目 {{ result.questions.length }} · 知识 {{ result.knowledge.length }} · 解题 {{ result.solve.length }}）</div>
 
       <!-- 题目 -->
-      <GkCard v-if="result.questions.length" title="📝 题目">
+      <GkCard v-if="result.questions.length" title="题目">
         <div class="res-list">
           <a v-for="r in result.questions" :key="'q'+r.id" class="res-item" :href="r.route" @click.prevent="go(r.route)">
             <span class="res-badge" :style="modStyle(r.module)">{{ r.module || '—' }}</span>
@@ -54,7 +54,7 @@
       </GkCard>
 
       <!-- 知识库 -->
-      <GkCard v-if="result.knowledge.length" title="📚 行测知识库">
+      <GkCard v-if="result.knowledge.length" title="行测知识库">
         <div class="res-list">
           <a v-for="r in result.knowledge" :key="'k'+r.id" class="res-item" :href="r.route" @click.prevent="go(r.route)">
             <span class="res-badge" :style="kgStyle(r.kg_type)">{{ r.kg_type }}</span>
@@ -68,7 +68,7 @@
       </GkCard>
 
       <!-- 解题库 -->
-      <GkCard v-if="result.solve.length" title="🛠 行测解题库">
+      <GkCard v-if="result.solve.length" title="行测解题库">
         <div class="res-list">
           <a v-for="r in result.solve" :key="'s'+r.id" class="res-item" :href="r.route" @click.prevent="go(r.route)">
             <span class="res-badge" :style="solveStyle(r.solve_type)">{{ r.solve_type }}</span>

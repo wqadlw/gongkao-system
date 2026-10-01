@@ -4,9 +4,8 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from database import get_db, Question, Category
-from services.parser import parse_ai_content, parse_note_content, validate_parsed_content, build_question_text
-from services.review_engine import calculate_next_review, update_master_level
+from database import get_db, Question, Category, recalc_category_counts
+from services.parser import parse_ai_content, validate_parsed_content
 from services.stats_engine import update_daily_stat
 
 router = APIRouter(prefix="/api/questions", tags=["题目管理"])
@@ -241,30 +240,6 @@ def delete_question(question_id: int, db: Session = Depends(get_db)):
     # 删除后完整重算题型树计数（保证前端题型树准确、不残留旧计数）
     recalc_category_counts(db)
     return {"message": "删除成功"}
-
-
-def recalc_category_counts(db: Session):
-    """基于题目表完整重算所有分类节点的计数（重分类后调用，保证题型树准确）"""
-    cats = db.query(Category).all()
-    questions = db.query(Question).all()
-    for c in cats:
-        cnt = 0
-        err = 0
-        for q in questions:
-            match = True
-            for lv in range(1, 6):
-                cv = getattr(c, f"level{lv}")
-                if cv:
-                    if (getattr(q, f"level{lv}") or "") != cv:
-                        match = False
-                        break
-            if match:
-                cnt += 1
-                if q.is_error:
-                    err += 1
-        c.question_count = cnt
-        c.error_count = err
-    db.commit()
 
 
 class ParseRequest(BaseModel):

@@ -7,8 +7,9 @@ from sqlalchemy import func
 from database import Question, MockExam, DailyStat, ReviewLog, Category, Note, ExamCountdown
 
 
-def get_dashboard_stats(db: Session) -> dict:
-    questions = db.query(Question).all()
+def get_dashboard_stats(db: Session, questions: list = None) -> dict:
+    if questions is None:
+        questions = db.query(Question).all()
     modules = {
         "政治理论": {"total": 0, "error": 0, "mastered": 0},
         "常识判断": {"total": 0, "error": 0, "mastered": 0},
@@ -31,7 +32,7 @@ def get_dashboard_stats(db: Session) -> dict:
     due_today = sum(1 for q in questions if q.next_review_time and q.next_review_time <= today_end and q.review_count > 0)
     seven_days_ago = now - timedelta(days=7)
     recent_new = sum(1 for q in questions if q.create_time and q.create_time >= seven_days_ago)
-    weak_points = get_weak_points(db, top=5)
+    weak_points = get_weak_points(db, top=5, questions=questions)
     total_errors = sum(1 for q in questions if q.is_error)
     total_mastered = sum(1 for q in questions if q.master_level >= 4)
     avg_mastery = sum(q.master_level for q in questions) / len(questions) if questions else 0
@@ -48,8 +49,9 @@ def get_dashboard_stats(db: Session) -> dict:
     }
 
 
-def get_module_radar(db: Session) -> dict:
-    questions = db.query(Question).all()
+def get_module_radar(db: Session, questions: list = None) -> dict:
+    if questions is None:
+        questions = db.query(Question).all()
     modules = ["政治理论", "常识判断", "言语理解与表达", "数量关系", "判断推理", "资料分析"]
     radar_data = []
     for m in modules:
@@ -64,10 +66,13 @@ def get_module_radar(db: Session) -> dict:
     return {"radar": radar_data}
 
 
-def get_error_distribution(db: Session) -> dict:
-    questions = db.query(Question).filter(Question.is_error == True).all()
+def get_error_distribution(db: Session, questions: list = None) -> dict:
+    if questions is None:
+        questions = db.query(Question).all()
     dist = {}
     for q in questions:
+        if not q.is_error:
+            continue
         key = q.level3 or q.level1 or "未分类"
         dist[key] = dist.get(key, 0) + 1
     return {"distribution": [{"name": k, "value": v} for k, v in sorted(dist.items(), key=lambda x: -x[1])]}
@@ -86,11 +91,11 @@ def get_trend_data(db: Session, days: int = 30) -> dict:
     return {"trend": trend}
 
 
-def get_heatmap_data(db: Session, year: int = None) -> list:
+def get_heatmap_data(db: Session, year: int = None, questions: list = None) -> list:
     if year is None:
         year = datetime.now().year
-    questions = db.query(Question).all()
-    stats = db.query(DailyStat).all()
+    if questions is None:
+        questions = db.query(Question).all()
 
     date_count = {}
     for q in questions:
@@ -101,8 +106,9 @@ def get_heatmap_data(db: Session, year: int = None) -> list:
     return [{"date": k, "count": v} for k, v in date_count.items()]
 
 
-def get_weak_points(db: Session, top: int = 10) -> list:
-    questions = db.query(Question).all()
+def get_weak_points(db: Session, top: int = 10, questions: list = None) -> list:
+    if questions is None:
+        questions = db.query(Question).all()
     point_stats = {}
     for q in questions:
         if q.level3 and q.level4:
