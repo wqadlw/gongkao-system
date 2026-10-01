@@ -32,6 +32,40 @@ class ResourceBatch(BaseModel):
     items: list
 
 
+@router.get("/tree")
+def resource_tree(db: Session = Depends(get_db)):
+    """三级层级聚合：分类 → 模块 → 大类/考点组（按计数降序），驱动左侧导航树"""
+    rows = db.query(Resource.category, Resource.sub_path).all()
+    tree = {}
+    for cat, sub in rows:
+        node = tree.setdefault(cat, {"count": 0, "children": {}})
+        node["count"] += 1
+        parts = [p for p in (sub or "").split("/") if p]
+        if parts:
+            lvl1 = node["children"].setdefault(parts[0], {"count": 0, "children": {}})
+            lvl1["count"] += 1
+            if len(parts) > 1:
+                lvl2 = lvl1["children"].setdefault("/".join(parts[1:]), {"count": 0, "children": {}})
+                lvl2["count"] += 1
+
+    def sort_children(children_map):
+        return [
+            {"name": name, "count": info["count"],
+             "children": sort_children(info["children"])}
+            for name, info in sorted(children_map.items(), key=lambda x: -x[1]["count"])
+        ]
+
+    order = ["行测", "申论", "面试", "考点精讲", "材料档案", "经验指南"]
+    items = []
+    for cat in order:
+        if cat in tree:
+            items.append({"name": cat, "count": tree[cat]["count"], "children": sort_children(tree[cat]["children"])})
+    for cat, info in sorted(tree.items(), key=lambda x: -x[1]["count"]):
+        if cat not in order:
+            items.append({"name": cat, "count": info["count"], "children": sort_children(info["children"])})
+    return {"items": items, "total": sum(c["count"] for c in items)}
+
+
 @router.get("/categories")
 def resource_categories(db: Session = Depends(get_db)):
     """一级分类与计数 + 类型计数 + 考点精讲的模块分面"""

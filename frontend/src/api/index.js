@@ -138,6 +138,7 @@ export const ocrApi = {
 
 export const resourceApi = {
   categories: () => api.get('/resources/categories'),
+  tree: () => api.get('/resources/tree'),
   list: (params) => api.get('/resources/list', { params }),
   detail: (id) => api.get(`/resources/detail/${id}`),
   relatedQuestions: (id) => api.get(`/resources/detail/${id}/questions`),

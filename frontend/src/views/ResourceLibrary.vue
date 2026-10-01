@@ -16,33 +16,43 @@
     </div>
 
     <div class="reslib-layout">
-      <!-- 左侧分类 -->
+      <!-- 左侧层级树 -->
       <aside class="card reslib-side">
-        <button class="cat-item" :class="{ active: !currentCategory }" @click="currentCategory = ''">
+        <button class="cat-item root" :class="{ active: !currentCategory }" @click="selectNode(null)">
           <span>全部资料</span><span class="cat-count">{{ total }}</span>
         </button>
-        <button
-          v-for="c in categories" :key="c.name"
-          class="cat-item" :class="{ active: currentCategory === c.name }"
-          @click="currentCategory = c.name; subPrefix = ''"
-        >
-          <span>{{ c.name }}</span><span class="cat-count">{{ c.count }}</span>
-        </button>
-
-        <!-- 考点精讲：模块分面 -->
-        <div v-if="currentCategory === '考点精讲' && Object.keys(subs).length" class="sub-facets">
-          <div class="facet-title">按模块</div>
-          <button class="cat-item sub" :class="{ active: !subPrefix }" @click="subPrefix = ''">
-            <span>全部模块</span>
-          </button>
+        <template v-for="rootItem in tree" :key="'r-' + rootItem.name">
           <button
-            v-for="(cnt, mod) in subs" :key="mod"
-            class="cat-item sub" :class="{ active: subPrefix === mod }"
-            @click="subPrefix = mod; page = 1"
+            class="cat-item root" :class="{ active: currentCategory === rootItem.name && !subPrefix }"
+            @click="selectNode(rootItem)"
           >
-            <span>{{ mod }}</span><span class="cat-count">{{ cnt }}</span>
+            <span class="cat-caret" :class="{ open: expanded[rootItem.name] }" @click.stop="toggleExpand(rootItem.name)">▸</span>
+            <span class="cat-name">{{ rootItem.name }}</span>
+            <span class="cat-count">{{ rootItem.count }}</span>
           </button>
-        </div>
+          <template v-if="expanded[rootItem.name]">
+            <div v-for="child in rootItem.children" :key="rootItem.name + '/' + child.name" class="tree-lv1">
+              <button
+                class="cat-item" :class="{ active: currentCategory === rootItem.name && subPrefix === child.name }"
+                @click="selectNode(rootItem, child.name)"
+              >
+                <span v-if="child.children.length" class="cat-caret" :class="{ open: expanded[rootItem.name + '/' + child.name] }" @click.stop="toggleExpand(rootItem.name + '/' + child.name)">▸</span>
+                <span class="cat-name">{{ child.name }}</span>
+                <span class="cat-count">{{ child.count }}</span>
+              </button>
+              <template v-if="child.children.length && expanded[rootItem.name + '/' + child.name]">
+                <button
+                  v-for="leaf in child.children" :key="rootItem.name + '/' + child.name + '/' + leaf.name"
+                  class="cat-item lv2" :class="{ active: currentCategory === rootItem.name && subPrefix === child.name + '/' + leaf.name }"
+                  @click="selectNode(rootItem, child.name + '/' + leaf.name)"
+                >
+                  <span class="cat-name">{{ leaf.name }}</span>
+                  <span class="cat-count">{{ leaf.count }}</span>
+                </button>
+              </template>
+            </div>
+          </template>
+        </template>
       </aside>
 
       <!-- 右侧列表 -->
@@ -149,7 +159,9 @@ const md = renderMarkdown
 
 const categories = ref([])
 const typeCounts = ref({})
-const subs = ref({})
+const tree = ref([])
+const expanded = ref({})
+const selectedPath = ref('')
 const currentCategory = ref('')
 const currentType = ref('')
 const subPrefix = ref('')
@@ -167,14 +179,42 @@ const related = ref([])
 const imageUrl = (p) => '/api/resources/image?path=' + encodeURIComponent(p)
 const fileUrl = (p) => '/api/resources/file?path=' + encodeURIComponent(p)
 
+// 层级树导航：rootItem=一级分类，childPath=其下的前缀（模块 或 模块/大类）
+function selectNode(rootItem, childPath) {
+  if (rootItem) {
+    currentCategory.value = rootItem.name
+    subPrefix.value = childPath || ''
+    selectedPath.value = childPath ? rootItem.name + '/' + childPath : rootItem.name
+    expanded.value[rootItem.name] = true
+    if (childPath) {
+      expanded.value[rootItem.name + '/' + childPath.split('/')[0]] = true
+    }
+  } else {
+    currentCategory.value = ''
+    subPrefix.value = ''
+    selectedPath.value = ''
+  }
+  page.value = 1
+  loadList()
+}
+
+function toggleExpand(key) {
+  expanded.value[key] = !expanded.value[key]
+}
+
 async function loadCategories() {
   try {
     const res = await resourceApi.categories()
-    categories.value = res.data.items
-    total.value = res.data.total
     typeCounts.value = res.data.type_counts || {}
-    subs.value = res.data.subs || {}
-  } catch { ElMessage.error('分类加载失败') }
+  } catch { /* 类型计数加载失败不阻塞 */ }
+}
+
+async function loadTree() {
+  try {
+    const res = await resourceApi.tree()
+    tree.value = res.data.items
+    total.value = res.data.total
+  } catch { ElMessage.error('分类树加载失败') }
 }
 
 async function loadList() {
@@ -183,7 +223,7 @@ async function loadList() {
     const res = await resourceApi.list({
       category: currentCategory.value || undefined,
       resource_type: currentType.value || undefined,
-      sub_prefix: currentCategory.value === '考点精讲' && subPrefix.value ? subPrefix.value : undefined,
+      sub_prefix: subPrefix.value || undefined,
       keyword: keyword.value || undefined,
       page: page.value, page_size: pageSize,
     })
@@ -199,7 +239,6 @@ function onSearchInput() {
   searchTimer = setTimeout(() => { page.value = 1; loadList() }, 300)
 }
 
-watch(currentCategory, () => { page.value = 1; loadList() })
 watch(currentType, () => { page.value = 1; loadList() })
 
 async function openDetail(r) {
@@ -208,7 +247,7 @@ async function openDetail(r) {
     detail.value = res.data
     detailVisible.value = true
     related.value = []
-    if (detail.value.related_qids !== undefined || r.qid_count) {
+    if (r.qid_count) {
       const qres = await resourceApi.relatedQuestions(r.id)
       related.value = qres.data.items
     }
@@ -220,7 +259,7 @@ function openLink(r) {
 }
 
 onMounted(async () => {
-  await Promise.all([loadCategories(), loadList()])
+  await Promise.all([loadCategories(), loadTree(), loadList()])
 })
 </script>
 
@@ -248,6 +287,13 @@ onMounted(async () => {
   font-size: 13.5px; color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
 }
 .cat-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.cat-item.root { font-weight: 600; color: var(--text-primary); }
+.cat-caret { display: inline-block; width: 14px; color: var(--text-tertiary); transition: transform 0.15s; font-size: 11px; }
+.cat-caret.open { transform: rotate(90deg); }
+.cat-name { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-lv1 .cat-item { padding-left: 26px; font-size: 12.5px; }
+.tree-lv1 .cat-item.lv2 { padding-left: 42px; font-size: 12px; }
+
 .cat-item.active { background: var(--primary-bg); color: var(--primary); font-weight: 600; }
 .cat-count { font-size: 12px; color: var(--text-tertiary); }
 .sub-facets { border-top: 1px dashed var(--border-light); margin-top: 8px; padding-top: 8px; }
