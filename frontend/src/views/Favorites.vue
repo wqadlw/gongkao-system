@@ -27,7 +27,13 @@
             <span class="fav-title">{{ it.title }}</span>
           </div>
           <div v-if="it.subtitle" class="fav-sub">{{ it.subtitle }}</div>
-          <div v-if="it.note" class="fav-note"><el-icon><ChatLineSquare /></el-icon> {{ it.note }}</div>
+          <div
+            v-if="it.note" class="fav-note"
+            title="点击编辑备注" @click.stop="editNote(it)"
+          ><el-icon><ChatLineSquare /></el-icon> {{ it.note }}</div>
+          <div
+            v-else class="fav-note add" title="添加备注" @click.stop="editNote(it)"
+          ><el-icon><ChatLineSquare /></el-icon> 添加备注</div>
           <div class="fav-time">收藏于 {{ it.collect_time }}</div>
         </div>
         <button class="fav-remove" title="取消收藏" @click.stop="removeFavorite(it)">
@@ -91,6 +97,20 @@ function switchType(t) {
   loadList()
 }
 
+async function editNote(it) {
+  try {
+    const { value } = await ElMessageBox.prompt('给这条收藏写个备注（为什么收藏/复习提示）：', '收藏备注', {
+      inputValue: it.note || '', inputPlaceholder: '例如：错因是量级换算，考前必看',
+      confirmButtonText: '保存', cancelButtonText: '取消',
+    })
+    await favoritesApi.updateNote({ obj_type: currentType.value, obj_id: it.obj_id, note: value || '' })
+    it.note = value || ''
+    ElMessage.success('备注已保存')
+  } catch (e) {
+    if (e !== 'cancel' && e?.message !== 'cancel') { /* 用户取消不提示 */ }
+  }
+}
+
 async function removeFavorite(it) {
   const ok = await ElMessageBox.confirm('取消收藏该项？', '确认', { type: 'warning' }).catch(() => false)
   if (!ok) return
@@ -138,7 +158,9 @@ onMounted(loadList)
 }
 .fav-title { font-size: 14px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fav-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 3px; }
-.fav-note { font-size: 12.5px; color: var(--text-secondary); margin-top: 5px; display: flex; align-items: center; gap: 4px; }
+.fav-note { font-size: 12.5px; color: var(--text-secondary); margin-top: 5px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.fav-note:hover { color: var(--primary); }
+.fav-note.add { color: var(--text-tertiary); font-style: italic; }
 .fav-time { font-size: 11.5px; color: var(--text-tertiary); margin-top: 4px; }
 .fav-remove {
   flex-shrink: 0; border: none; background: none; cursor: pointer;

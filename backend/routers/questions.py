@@ -60,7 +60,11 @@ def get_questions(
     if level5:
         query = query.filter(Question.level5 == level5)
     if is_favorite is not None:
-        query = query.filter(Question.is_favorite == is_favorite)
+        # 收藏体系 v2：favorites 表为唯一事实源（EXISTS 子查询，旧列不再维护）
+        from database import Favorite
+        sub = db.query(Favorite.id).filter(
+            Favorite.obj_type == "question", Favorite.obj_id == Question.id)
+        query = query.filter(sub.exists()) if is_favorite else query.filter(~sub.exists())
     if is_error is not None:
         query = query.filter(Question.is_error == is_error)
     if deposited is not None:
@@ -216,6 +220,8 @@ def update_question(question_id: int, q: QuestionUpdate, db: Session = Depends(g
         raise HTTPException(status_code=404, detail="题目不存在")
 
     update_data = q.dict(exclude_unset=True)
+    # 收藏体系 v2：favorites 表是唯一写入口，PUT 的 is_favorite 旁路写入一律忽略
+    update_data.pop("is_favorite", None)
     level_changed = any(k in update_data for k in ("level1", "level2", "level3", "level4", "level5"))
     is_error_changed = "is_error" in update_data
     for key, value in update_data.items():

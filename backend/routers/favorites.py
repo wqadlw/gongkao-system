@@ -1,8 +1,16 @@
-"""统一收藏中心路由 — 跨题目/资料/知识点/解题条目的收藏、列表与批量状态"""
+"""统一收藏中心路由 v2 — favorites 表为唯一事实源
+
+v2 变化（设计文档 docs/dev/favorites.md）：
+- 唯一索引 (obj_type, obj_id)，toggle 幂等
+- status 只读 favorites 表（旧列并集口径废弃）
+- 题目列表的 is_favorite 筛选由本表驱动（EXISTS），questions PUT 忽略 is_favorite 旁路
+- resource 项 route 精确定位（?keyword=标题）
+"""
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy import exists
 from sqlalchemy.orm import Session
 
 from database import get_db, Favorite, Question, Resource, Knowledge, SolveItem
@@ -33,18 +41,28 @@ def _resolve(db: Session, obj_type: str, obj_id: int):
             "title": r.title,
             "subtitle": r.sub_path or r.category,
             "badge": r.resource_type,
-            "route": f"/resource-library",
+            "route": "/resource-library?keyword=" + r.title,
         }
     if obj_type == "knowledge":
         k = db.query(Knowledge).filter(Knowledge.id == obj_id).first()
         if not k:
             return None
-        return {"title": k.title, "subtitle": f"{k.module} · {k.kg_type}", "badge": k.kg_type, "route": "/knowledge"}
+        return {
+            "title": k.title,
+            "subtitle": f"{k.module} · {k.kg_type}",
+            "badge": k.kg_type,
+            "route": "/knowledge?keyword=" + k.title,
+        }
     if obj_type == "solve_item":
         s = db.query(SolveItem).filter(SolveItem.id == obj_id).first()
         if not s:
             return None
-        return {"title": s.title, "subtitle": f"{s.module} · {s.solve_type}", "badge": s.solve_type, "route": "/solve-library"}
+        return {
+            "title": s.title,
+            "subtitle": f"{s.module} · {s.solve_type}",
+            "badge": s.solve_type,
+            "route": "/solve-library?keyword=" + s.title,
+        }
     return None
 
 
@@ -70,7 +88,7 @@ def toggle_favorite(req: ToggleRequest, db: Session = Depends(get_db)):
                         note=req.note, create_time=datetime.now()))
         favorited = True
 
-    # 题目：双向同步 questions.is_favorite（既有列表筛选体系继续可用）
+    # 旧列同步（只写不改语义：questions.is_favorite 供旧筛选平滑过渡，resource 旧列废弃不再维护）
     if req.obj_type == "question":
         q = db.query(Question).filter(Question.id == req.obj_id).first()
         if q:
@@ -81,7 +99,7 @@ def toggle_favorite(req: ToggleRequest, db: Session = Depends(get_db)):
 
 @router.post("/status")
 def favorite_status(payload: dict, db: Session = Depends(get_db)):
-    """批量查询星标态：{obj_type, ids:[...]} → {str(id): bool}"""
+    """批量查询星标态：{obj_type, ids:[...]} → {str(id): bool}（只读 favorites 表）"""
     obj_type = payload.get("obj_type", "")
     ids = [int(i) for i in (payload.get("ids") or [])][:500]
     if obj_type not in OBJ_TYPES or not ids:
@@ -89,10 +107,30 @@ def favorite_status(payload: dict, db: Session = Depends(get_db)):
     rows = db.query(Favorite.obj_id).filter(
         Favorite.obj_type == obj_type, Favorite.obj_id.in_(ids)).all()
     hit = {r[0] for r in rows}
-    if obj_type == "question":  # 题目兼容旧字段
-        for qid, in db.query(Question.id).filter(Question.id.in_(ids), Question.is_favorite == True).all():  # noqa: E712
-            hit.add(qid)
     return {"status": {str(i): (i in hit) for i in ids}}
+
+
+class NoteUpdate(BaseModel):
+    obj_type: str
+    obj_id: int
+    note: str
+
+
+@router.post("/note")
+def update_note(req: NoteUpdate, db: Session = Depends(get_db)):
+    """更新收藏备注（收藏页内编辑）"""
+    row = db.query(Favorite).filter(
+        Favorite.obj_type == req.obj_type, Favorite.obj_id == req.obj_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="收藏不存在")
+    row.note = req.note.strip()[:500]
+    db.commit()
+    return {"note": row.note}
+
+
+@router.get("/count")
+def favorite_count(db: Session = Depends(get_db)):
+    return {"counts": {t: db.query(Favorite).filter(Favorite.obj_type == t).count() for t in OBJ_TYPES}}
 
 
 @router.get("")

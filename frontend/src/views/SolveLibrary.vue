@@ -110,7 +110,11 @@
                     <button class="sl-op danger" @click.stop="removeItem(k)" title="删除"><el-icon><Delete /></el-icon></button>
                   </span>
                 </div>
-                <h3 class="sl-title">{{ cardTitle(k) }}</h3>
+                <div class="sl-title-row">
+                  <h3 class="sl-title">{{ cardTitle(k) }}</h3>
+                  <FavoriteStar inline :obj-type="'solve_item'" :obj-id="k.id" :initial="k.is_fav"
+                    @change="v => (k.is_fav = v)" />
+                </div>
                 <div class="sl-tags" v-if="cardTags(k).length">
                   <span v-for="t in cardTags(k)" :key="t" class="sl-tagchip" @click.stop="onKaodian([t])">{{ t }}</span>
                 </div>
@@ -315,7 +319,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { solveLibraryApi } from '../api'
+import { favoritesApi, solveLibraryApi } from '../api'
+import FavoriteStar from '../components/FavoriteStar.vue'
 import { renderMarkdown } from '../utils/md'
 import { MODULES, modColor, modStyle, SOLVE_TYPES, solveStyle } from '../utils/constants'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -402,6 +407,9 @@ async function loadAll() {
   try {
     const res = await solveLibraryApi.getList({ page: 1, page_size: 2000 })
     allItems.value = res.data.items || []
+    const st = await favoritesApi.status({ obj_type: 'solve_item', ids: allItems.value.map(k => k.id) })
+    const map = st.data.status || {}
+    allItems.value.forEach(k => { k.is_fav = !!map[String(k.id)] })
   } catch (e) { console.error(e) }
 }
 
@@ -777,6 +785,8 @@ watch(() => route.query, (q) => {
 .sl-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .sl-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 500; flex-shrink: 0; }
 .sl-tag-dot { width: 6px; height: 6px; border-radius: 50%; }
+.sl-title-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.sl-title-row .sl-title { flex: 1; }
 .sl-title { margin: 0; font-size: 14.5px; font-weight: 500; color: var(--text-primary); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sl-diff { font-size: 8px; color: var(--warning); letter-spacing: 2px; flex-shrink: 0; line-height: 1; }
 .sl-diff i { color: var(--border-base); font-style: normal; }

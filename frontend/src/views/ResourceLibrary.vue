@@ -49,10 +49,8 @@
             class="card res-card" :class="{ 'is-text': r.resource_type !== 'mindmap' }"
             @click="openDetail(r)"
           >
-            <span
-              class="fav-star" :class="{ on: r.is_favorite }"
-              title="收藏" @click.stop="toggleFavorite(r)"
-            ><el-icon><StarFilled v-if="r.is_favorite" /><Star v-else /></el-icon></span>
+            <FavoriteStar :obj-type="'resource'" :obj-id="r.id" :initial="r.is_favorite"
+              @change="v => { r.is_favorite = v; if (onlyFavorite) loadList(); loadFavoriteCount() }" />
             <template v-if="r.resource_type === 'mindmap'">
               <div class="res-thumb">
                 <img v-if="r.image_path" :src="imageUrl(r.image_path)" :alt="r.title" loading="lazy" decoding="async" />
@@ -96,9 +94,8 @@
       <template #header>
         <div class="dlg-header">
           <span class="dlg-title">{{ detail?.title }}</span>
-          <button class="fav-star big" :class="{ on: detail?.is_favorite }" title="收藏" @click="toggleFavorite(detail, false)">
-            <el-icon><StarFilled v-if="detail?.is_favorite" /><Star v-else /></el-icon>
-          </button>
+          <FavoriteStar :obj-type="'resource'" :obj-id="detail?.id || 0" :initial="!!detail?.is_favorite"
+            @change="v => { if (detail) detail.is_favorite = v; loadFavoriteCount() }" />
           <el-button size="small" text @click="dialogFullscreen = !dialogFullscreen">
             <el-icon><FullScreen /></el-icon> {{ dialogFullscreen ? '退出全屏' : '全屏阅读' }}
           </el-button>
@@ -155,6 +152,7 @@ import { ElMessage } from 'element-plus'
 import { resourceApi, favoritesApi } from '../api'
 import { renderMarkdown } from '../utils/md'
 import ResourceTree from '../components/ResourceTree.vue'
+import FavoriteStar from '../components/FavoriteStar.vue'
 
 const md = renderMarkdown
 const route = useRoute()
@@ -211,8 +209,8 @@ function toggleExpand(key) {
 
 async function loadFavoriteCount() {
   try {
-    const res = await resourceApi.list({ favorite: 1, page_size: 1 })
-    favoriteCount.value = res.data.total
+    const res = await favoritesApi.count()
+    favoriteCount.value = res.data.counts?.resource || 0
   } catch { /* 忽略 */ }
 }
 
@@ -271,16 +269,6 @@ watch(
     }
   }
 )
-
-async function toggleFavorite(r, stop = true) {
-  try {
-    const res = await favoritesApi.toggle({ obj_type: 'resource', obj_id: r.id })
-    r.is_favorite = res.data.favorited
-    if (detail.value?.id === r.id) detail.value.is_favorite = res.data.favorited
-    loadFavoriteCount()
-    if (onlyFavorite.value && stop) loadList()
-  } catch { ElMessage.error('收藏操作失败') }
-}
 
 async function openDetail(r) {
   try {

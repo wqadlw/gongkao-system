@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from database import get_db, Resource, DB_PATH
+from database import get_db, Resource, DB_PATH, Favorite
 
 router = APIRouter(prefix="/api/resources", tags=["资料库"])
 
@@ -166,12 +166,22 @@ def resource_list(
             or_(Resource.sub_path.like(module_prefix + "%"), Resource.category == module_prefix)
         )
     if favorite is not None:
-        query = query.filter(Resource.is_favorite == (1 if favorite else 0))
+        # 收藏体系 v2：favorites 表为唯一事实源（EXISTS 子查询）
+        fsub = db.query(Favorite.id).filter(
+            Favorite.obj_type == "resource", Favorite.obj_id == Resource.id)
+        query = query.filter(fsub.exists()) if favorite else query.filter(~fsub.exists())
     if keyword:
         query = query.filter(Resource.title.contains(keyword) | Resource.sub_path.contains(keyword))
     total = query.count()
-    # 列表只取必要列（content/related_qids 大字段不入内存，摘要用 substr、题数用 length）
+    # 列表只取必要列（content/related_qids 大字段不入内存，摘要用 substr、题数用 json_array_length）
     from sqlalchemy import func
+
+    # 收藏态由 favorites 表派生（一次查询本页命中的收藏集合）
+    fav_q = query.with_entities(Resource.id)
+    fav_ids = {rid for (rid,) in db.query(Favorite.obj_id).filter(
+        Favorite.obj_type == "resource",
+        Favorite.obj_id.in_(fav_q.subquery())
+    ).all()} if favorite is None else set()
 
     rows = (
         query.with_entities(
@@ -180,7 +190,7 @@ def resource_list(
             func.substr(Resource.content, 1, 150),
             func.json_array_length(func.coalesce(func.nullif(Resource.related_qids, ""), "[]")),
             Resource.image_path, Resource.file_path,
-            Resource.source_url, Resource.source, Resource.is_favorite,
+            Resource.source_url, Resource.source,
         )
         .order_by(
             (Resource.image_path == ""), Resource.category, Resource.sub_path, Resource.title
@@ -196,27 +206,13 @@ def resource_list(
             "qid_count": qlen or 0,
             "image_path": ipath, "file_path": fpath,
             "source_url": surl, "source": src,
-            "is_favorite": bool(fav),
-        } for (rid, cat, sub, title, desc, rtype, excerpt, qlen, ipath, fpath, surl, src, fav) in rows],
+            "is_favorite": (rid in fav_ids) if favorite is None else bool(favorite),
+        } for (rid, cat, sub, title, desc, rtype, excerpt, qlen, ipath, fpath, surl, src) in rows],
         "total": total, "page": page, "page_size": page_size,
     }
 
 
-@router.post("/{resource_id}/favorite")
-def toggle_favorite(resource_id: int, db: Session = Depends(get_db)):
-    r = db.query(Resource).filter(Resource.id == resource_id).first()
-    if not r:
-        raise HTTPException(status_code=404, detail="资料不存在")
-    r.is_favorite = 0 if r.is_favorite else 1
-    # 双写统一收藏中心（favorites 表为跨对象收藏的单一事实源）
-    from database import Favorite
-    row = db.query(Favorite).filter(Favorite.obj_type == "resource", Favorite.obj_id == resource_id).first()
-    if r.is_favorite and not row:
-        db.add(Favorite(obj_type="resource", obj_id=resource_id, create_time=datetime.now()))
-    elif not r.is_favorite and row:
-        db.delete(row)
-    db.commit()
-    return {"is_favorite": bool(r.is_favorite)}
+# （收藏切换已统一到 POST /api/favorites/toggle，v2 起本接口移除）
 
 
 @router.get("/image")
@@ -267,12 +263,16 @@ def resource_detail(resource_id: int, db: Session = Depends(get_db)):
     r = db.query(Resource).filter(Resource.id == resource_id).first()
     if not r:
         raise HTTPException(status_code=404, detail="资料不存在")
+    from database import Favorite
+    is_fav = db.query(Favorite.id).filter(
+        Favorite.obj_type == "resource", Favorite.obj_id == resource_id).first() is not None
     return {
         "id": r.id, "category": r.category, "sub_path": r.sub_path,
         "title": r.title, "description": r.description,
         "resource_type": r.resource_type, "content": r.content,
         "image_path": r.image_path, "file_path": r.file_path,
         "source_url": r.source_url, "source": r.source,
+        "is_favorite": is_fav,
     }
 
 

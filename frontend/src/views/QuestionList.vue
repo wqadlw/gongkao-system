@@ -112,7 +112,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { questionApi, categoryApi } from '../api'
+import { favoritesApi, questionApi, categoryApi } from '../api'
 import { useAppStore } from '../stores/app'
 import { renderMarkdown, renderInline } from '../utils/md'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -233,8 +233,8 @@ const groups = computed(() => {
 
 async function toggleFav(q) {
   try {
-    await questionApi.update(q.id, { is_favorite: !q.is_favorite })
-    q.is_favorite = !q.is_favorite
+    const res = await favoritesApi.toggle({ obj_type: 'question', obj_id: q.id })
+    q.is_favorite = res.data.favorited
     ElMessage.success(q.is_favorite ? '已收藏' : '已取消收藏')
   } catch (e) {
     ElMessage.error('操作失败：' + (e.response?.data?.detail || e.message))

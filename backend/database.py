@@ -4,7 +4,7 @@
 """
 import os
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, Text, String, Boolean, DateTime, Float, text
+from sqlalchemy import create_engine, Column, Integer, Text, String, Boolean, DateTime, Float, text, UniqueConstraint
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -351,7 +351,7 @@ class MockQuestion(Base):
     is_correct = Column(Integer)                              # 0/1，NULL=未判分
 
 
-# ========== 表13：统一收藏中心（题目/资料/知识点/解题条目；create_all 自动建表） ==========
+# ========== 表13：统一收藏中心（题目/资料/知识点/解题条目；唯一事实源） ==========
 class Favorite(Base):
     __tablename__ = "favorites"
     id = Column(Integer, primary_key=True, index=True)
@@ -359,6 +359,38 @@ class Favorite(Base):
     obj_id = Column(Integer, default=0, index=True)
     note = Column(String(500), default="")                    # 收藏备注
     create_time = Column(DateTime, default=datetime.now)
+    __table_args__ = (
+        UniqueConstraint("obj_type", "obj_id", name="ux_favorites_obj"),
+    )
+
+
+def _migrate_favorites_v2():
+    """收藏体系 v2 迁移：旧列数据一次性灌入 favorites（幂等），加唯一索引"""
+    import sqlite3
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    # 唯一索引（重复行先清理，保留最早一条）
+    cur.execute("""
+        DELETE FROM favorites WHERE id NOT IN (
+            SELECT MIN(id) FROM favorites GROUP BY obj_type, obj_id
+        )
+    """)
+    cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_favorites_obj ON favorites(obj_type, obj_id)")
+    # 迁移 questions.is_favorite=1（跳过已存在）
+    cur.execute("""
+        INSERT OR IGNORE INTO favorites (obj_type, obj_id, create_time)
+        SELECT 'question', id, ? FROM questions WHERE is_favorite = 1
+    """, (datetime.now(),))
+    # 迁移 resources.is_favorite=1
+    cur.execute("""
+        INSERT OR IGNORE INTO favorites (obj_type, obj_id, create_time)
+        SELECT 'resource', id, ? FROM resources WHERE is_favorite = 1
+    """, (datetime.now(),))
+    conn.commit()
+    n = cur.execute("SELECT COUNT(*) FROM favorites").fetchone()[0]
+    conn.close()
+    if n:
+        print(f"[收藏 v2] favorites 表就绪（唯一索引 + 迁移后 {n} 条）")
 
 
 # ========== 初始化函数 ==========
@@ -655,4 +687,8 @@ def init_all():
     init_prompts()
     init_exam_countdowns()
     init_knowledge()
+    try:
+        _migrate_favorites_v2()
+    except Exception as e:
+        print(f"[收藏 v2 迁移失败（不影响启动）] {e}")
     print("[初始化完成] 数据库就绪")

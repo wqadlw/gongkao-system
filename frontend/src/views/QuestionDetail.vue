@@ -303,7 +303,7 @@
 <script setup>
 import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { questionApi, noteApi, reviewApi, knowledgeApi } from '../api'
+import { favoritesApi, questionApi, noteApi, reviewApi, knowledgeApi } from '../api'
 import { useAppStore } from '../stores/app'
 import { ElMessage } from 'element-plus'
 import { renderMarkdown, renderInline } from '../utils/md'
@@ -522,9 +522,9 @@ function onKey(e) {
 async function toggleFav() {
   if (!q.value) return
   try {
-    await questionApi.update(q.value.id, { is_favorite: !q.value.is_favorite })
-    applyQpatch({ is_favorite: !q.value.is_favorite })
-    ElMessage.success(q.value.is_favorite ? '已收藏' : '已取消收藏')
+    const res = await favoritesApi.toggle({ obj_type: 'question', obj_id: q.value.id })
+    applyQpatch({ is_favorite: res.data.favorited })
+    ElMessage.success(res.data.favorited ? '已收藏' : '已取消收藏')
   } catch (e) { ElMessage.error('操作失败：' + (e.response?.data?.detail || e.message)) }
 }
 

@@ -164,6 +164,8 @@ export const favoritesApi = {
   list: (params) => api.get('/favorites', { params }),
   toggle: (data) => api.post('/favorites/toggle', data),
   status: (data) => api.post('/favorites/status', data),
+  count: () => api.get('/favorites/count'),
+  updateNote: (data) => api.post('/favorites/note', data),
 }
 
 export default api

@@ -79,7 +79,6 @@ const menuGroups = [
   { label: '资料库', items: [
     { path: '/knowledge', icon: 'Reading', label: '行测知识库' },
     { path: '/resource-library', icon: 'FolderOpened', label: '行测资料库' },
-    { path: '/resource-library?favorite=1', icon: 'Star', label: '我的收藏' },
     { path: '/solve-library', icon: 'Lightning', label: '行测解题库' },
     { path: '/notes', icon: 'Notebook', label: '笔记管理' },
     { path: '/prompts', icon: 'Document', label: '提示词管理' },

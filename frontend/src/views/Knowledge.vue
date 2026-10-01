@@ -110,7 +110,11 @@
                     <button class="kb-op danger" @click.stop="removeItem(k)" title="删除"><el-icon><Delete /></el-icon></button>
                   </span>
                 </div>
-                <h3 class="kb-title">{{ cardTitle(k) }}</h3>
+                <div class="kb-title-row">
+                  <h3 class="kb-title">{{ cardTitle(k) }}</h3>
+                  <FavoriteStar inline :obj-type="'knowledge'" :obj-id="k.id" :initial="k.is_fav"
+                    @change="v => (k.is_fav = v)" />
+                </div>
                 <div class="kb-tags" v-if="cardTags(k).length">
                   <span v-for="t in cardTags(k)" :key="t" class="kb-tagchip" @click.stop="onKaodian([t])">{{ t }}</span>
                 </div>
@@ -317,7 +321,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { knowledgeApi } from '../api'
+import { favoritesApi, knowledgeApi } from '../api'
+import FavoriteStar from '../components/FavoriteStar.vue'
 import { renderMarkdown } from '../utils/md'
 import { MODULES, modColor, modStyle, KG_TYPES, kgStyle } from '../utils/constants'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -404,6 +409,10 @@ async function loadAll() {
   try {
     const res = await knowledgeApi.getList({ page: 1, page_size: 2000 })
     allKb.value = res.data.items || []
+    // 收藏体系 v2：批量取星标态
+    const st = await favoritesApi.status({ obj_type: 'knowledge', ids: allKb.value.map(k => k.id) })
+    const map = st.data.status || {}
+    allKb.value.forEach(k => { k.is_fav = !!map[String(k.id)] })
   } catch (e) { console.error(e) }
 }
 
@@ -789,6 +798,8 @@ watch(() => route.query, (q) => {
 .kb-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .kb-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 500; flex-shrink: 0; }
 .kb-tag-dot { width: 6px; height: 6px; border-radius: 50%; }
+.kb-title-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.kb-title-row .kb-title { flex: 1; }
 .kb-title { margin: 0; font-size: 14.5px; font-weight: 500; color: var(--text-primary); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kb-diff { font-size: 8px; color: var(--warning); letter-spacing: 2px; flex-shrink: 0; line-height: 1; }
 .kb-diff i { color: var(--border-base); font-style: normal; }
