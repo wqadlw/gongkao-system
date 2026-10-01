@@ -43,7 +43,20 @@
 - 录入页 ②区新增"截图识别题干"：识别文字预填题干输入框，公式仍交 AI——把录题从"手打/整段粘 AI"中省掉一步。
 - 验证：合成中文图片识别"下列说法正确的是："✅，接口端到端 ✅。
 
-## 三、待办 / 遗留
+## 三、公考知识导入：思维导图库（kuriv/civil-service-exam，MIT）
+
+**调研**：仓库为亿图脑图 `.emmx` + PNG 预览，按 `行测/<模块>/<主题>/<考点>/` 组织（另含申论/面试，本项目暂不导入，模块不符）。
+`.emmx` 是 zip：`page/page.xml` 内 `<Shape ID Type>` 节点、`<tp>` 存文本、`<LevelData><SubLevel V="子ID;…"/>` 描述层级——纯 Python 可解析。
+
+**实现**：`scripts/emmx_to_knowledge.py`（安全加固：拒绝 DTD/ENTITY + 20MB 上限，Mimosa 要求），
+每张导图 → 一条知识卡（module=模块、level2/3=目录路径、content=大纲 markdown、card_summary=一级分支）。
+
+**结果**：49/51 个导图成功导入知识库（2 个内容过短跳过），常识判断 +40（宪法/刑法/民法…）、判断推理/言语/数量/资料全覆盖。
+验证：`宪法` 条目含"修宪规则/国体/选举制度"等完整大纲 ✅。
+
+**踩坑**：gh-proxy 对中文路径的 raw 请求 404，需走 contents API（base64）；git clone 不受影响。
+
+## 四、待办 / 遗留
 
 - [ ] 本批提交因 GitHub 网络中断未推送（本地领先 2 个提交，恢复后补推）
 - [ ] SQLite 在线备份 API（backup 用 sqlite3.backup 替换 shutil.copy2）
