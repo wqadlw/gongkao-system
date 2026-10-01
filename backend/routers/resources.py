@@ -147,6 +147,21 @@ def resource_related_questions(resource_id: int, db: Session = Depends(get_db)):
     ]}
 
 
+@router.get("/naoku/media")
+def naoku_media(path: str = Query(...)):
+    """考公脑库配图服务：path 相对脑库根目录，但必须落在 90-图片 内"""
+    from database import DB_PATH as _db_path
+    naoku_root = os.path.realpath(os.path.join(os.path.dirname(_db_path), "kaogong-naoku"))
+    media_root = os.path.join(naoku_root, "90-图片")
+    if not path or "\x00" in path:
+        raise HTTPException(status_code=404, detail="文件不存在")
+    abs_path = os.path.realpath(os.path.join(naoku_root, path.replace("\\", "/").lstrip("/")))
+    if not abs_path.startswith(media_root + os.sep) or not os.path.isfile(abs_path):
+        raise HTTPException(status_code=404, detail="文件不存在")
+    from mimetypes import guess_type
+    return FileResponse(abs_path, media_type=guess_type(abs_path)[0] or "application/octet-stream")
+
+
 @router.post("/batch")
 def resource_batch(data: ResourceBatch, db: Session = Depends(get_db)):
     """批量导入（脚本产出清单后调用）；以 (title, sub_path) 判重，预载已有集合避免逐条查询"""

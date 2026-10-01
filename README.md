@@ -26,6 +26,7 @@
 - 📚 **真题库对接（v2.1 新增）**：一键接入 [ERRRC/xingcezhenti](https://github.com/ERRRC/xingcezhenti)，**2016-2026 国考+省考 2962 份试卷**按模块浏览、勾选入库、按 qid 自动去重；题目图片本地代理直接渲染；**通用数据集导入**：C-Eval（公务员科目 52 题）、[LogiQA](https://github.com/lgw863/LogiQA-dataset)（**逻辑推理 8016 题**，源自国考）等公开数据集放入 `data/question_sources/` 即可一键入库。
 - 🧠 **FSRS 科学复习（v2.1 新增）**：接入 [FSRS 记忆调度算法](https://github.com/open-spaced-repetition/py-fsrs)（Anki 同款），每题独立稳定性/难度，动态安排复习时间；沉浸式刷卡界面，空格翻面、`1/2/3/4` 评分，提交即知下次复习时间；**支持用个人复习日志训练专属 FSRS 参数**（官方 Rust 优化器，本地训练零上传）；未安装 fsrs 库自动回退艾宾浩斯固定周期。
 - 📷 **离线 OCR 截图识别（v2.1 新增）**：录入页上传刷题截图，本地 OCR 直接提取题干文字预填（[RapidOCR](https://github.com/RapidAI/RapidOCR)，无需联网），公式等复杂内容仍交给 AI 精析。
+- 🧬 **真题深度标注（v2.1 新增）**：资料分析与判断推理 **11,270 道题**自带 AI 深度解析——推理链、最快解法、易错点、母题抽象五个维度预填（来源 [考公脑库](https://github.com/ERRRC/kaogongzhentizhengliu)），题库总量 **19,000+**。
 - 📤 **Anki 牌组导出（v2.1 新增）**：一键导出 `.apkg`（题面 / 答案 / 解析 / 考点标签，公式图自动打包媒体），手机 AnkiDroid 随时随地刷题。
 - 📚 **行测知识库**：独立知识卡片，按「模块 / 类型 / 考点」三维导航；含考点定位面包屑与「来源题目」一键溯源。
 - 🗂 **资料库（v2.1 新增）**：**11,000+ 份公考资料**统一收纳——51 张思维导图（[kuriv/civil-service-exam](https://github.com/kuriv/civil-service-exam) MIT）、**10,375 条考点精讲**（母题级「核心立场」，来自 [ERRRC/kaogongzhentizhengliu](https://github.com/ERRRC/kaogongzhentizhengliu) 考公脑库，与真题 qid 关联可跳转）、717 份资料分析材料结构档案、程序员考公指南等外链；类型筛选 + 模块分面 + 关键词检索。

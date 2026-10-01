@@ -75,7 +75,21 @@
 - 11,147 条导入仅 2.1s（batch 预载去重集）；batch 逐条查询的 N+1 同步消除。
 - 方案 A（11,282 篇逐题标注回填题目结构化字段）待用户确认后另行实施。
 
-## 六、待办 / 遗留
+## 六、方案 A：11,270 道真题深度标注入库
+
+- `scripts/naoku_questions_import.py`：解析 10-真题 每题标注 → 按字段映射入库
+  （问法模型→identify_signal、推理链→break_logic、最快解法→quick_solve、
+  易错点→error_path、母题抽象+同类特征→background_knowledge、考点末段→sub_point，
+  level1~3=模块/大类/细分考点），qid 走 bank_imports 保持去重体系。
+- **非破坏性原则**：对已存在题目只回填空字段，绝不覆盖用户自己的解析。
+- 全量 15 秒：导入 11,270（跳过 12 篇结构异常），题库总量达 **19,365 题**。
+- 新端点 `/api/resources/naoku/media`（脑库配图，限定 90-图片 内，穿越已拦截）。
+- 踩坑：① clean() 把 ✅ 一并清掉导致答案提取不到（选项块须用原文）；② 单行字段
+  （最快解法/同类特征）跟在 ## 小节后会被并进上节（用全文 **字段** 提取 + 剔除并行走漏行）；
+  ③ 图片端点路径双拼 90-图片（path 已含前缀，基准应为脑库根）；④ 路由前缀叠加
+  （/api/resources/naoku/media），导入改写与路由注册必须一致，批量 REPLACE 修正存量。
+
+## 七、待办 / 遗留
 
 - [x] GitHub 网络恢复，积压提交已全部推送
 - [ ] SQLite 在线备份 API（backup 用 sqlite3.backup 替换 shutil.copy2）
