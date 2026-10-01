@@ -54,12 +54,30 @@
         </div>
       </div>
     </div>
+
+    <div class="card">
+      <div class="card-header"><h3><el-icon><Reading /></el-icon> 学习手册导出</h3></div>
+      <div class="card-body">
+        <div class="export-buttons">
+          <el-select v-model="handbookModule" placeholder="选择模块" style="width: 180px">
+            <el-option v-for="m in handbookModules" :key="m.module" :value="m.module"
+              :label="`${m.module}（${m.total} 题）`" :disabled="!m.total" />
+          </el-select>
+          <button class="btn-primary" :disabled="!handbookModule" @click="exportHandbook">
+            <el-icon><Download /></el-icon> 生成冲刺手册(Markdown)
+          </button>
+        </div>
+        <p class="handbook-hint">
+          按考点速查/公式速查/错题本结构组装本模块数据，含薄弱考点 TOP10 与资料库核心立场，可用于打印或导入 Obsidian/Typora。
+        </p>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { backupApi } from '../api'
+import { backupApi, handbookApi } from '../api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const info = ref({})
@@ -144,7 +162,33 @@ async function exportAnki() {
   } catch (e) { ElMessage.error('导出失败：' + (e?.response?.data?.detail || '')) }
 }
 
-onMounted(() => { loadInfo(); loadBackups() })
+const handbookModule = ref('')
+const handbookModules = ref([])
+
+async function exportHandbook() {
+  if (!handbookModule.value) return
+  try {
+    const res = await handbookApi.export(handbookModule.value)
+    const url = URL.createObjectURL(new Blob([res.data], { type: 'text/markdown' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${handbookModule.value}_冲刺手册.md`
+    a.click()
+    URL.revokeObjectURL(url)
+    ElMessage.success('学习手册已生成')
+  } catch (e) {
+    ElMessage.error('手册生成失败：' + (e.response?.data?.detail || ''))
+  }
+}
+
+async function loadHandbookModules() {
+  try {
+    const res = await handbookApi.modules()
+    handbookModules.value = res.data.items
+  } catch { /* 手册模块概况加载失败不影响页面 */ }
+}
+
+onMounted(() => { loadInfo(); loadBackups(); loadHandbookModules() })
 </script>
 
 <style scoped>
@@ -173,4 +217,8 @@ onMounted(() => { loadInfo(); loadBackups() })
 .btn-icon { background: var(--bg-subtle); border: none; width: 28px; height: 28px; border-radius: var(--radius-sm); cursor: pointer; }
 .btn-icon.danger:hover { background: var(--danger-bg); }
 .export-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
+</style>
+
+<style scoped>
+.handbook-hint { font-size: 12px; color: var(--text-tertiary); margin: 10px 0 0; line-height: 1.7; }
 </style>

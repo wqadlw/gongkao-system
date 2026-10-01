@@ -154,4 +154,9 @@ export const mockApi = {
   remove: (id) => api.delete(`/mock/${id}`),
 }
 
+export const handbookApi = {
+  modules: () => api.get('/handbook/modules'),
+  export: (module) => api.get('/handbook/export', { params: { module }, responseType: 'blob', timeout: 120000 }),
+}
+
 export default api

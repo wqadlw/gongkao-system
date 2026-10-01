@@ -100,7 +100,19 @@
   上一题/下一题）→ 成绩单（按正确率分档配色）+ 逐题复盘跳转题目详情。
 - 回归 9 项全过（组卷/无答案泄露/判分/模块计分/复盘/列表/断点/交卷保护/删除）。
 
-## 八、待办 / 遗留
+## 八、学习手册导出（吸收 NovaForge 模板结构）
+
+- 调研：NovaForge（SiriusFzh，⭐676，MIT）为 LaTeX/Typst/Markdown 笔记模板集，
+  本项目只吸收其 exam-review 冲刺手册的**章节组织**（不复制内容）；
+  其 Claude Skill 生成流程与 Web 架构不符，不吸收。
+- `routers/handbook.py`：/modules 预览 + /export 生成 Markdown 手册
+  （考情速览 → 薄弱考点 TOP10 → 考点速查[资料库核心立场] → 公式/知识点速查 → 错题本）。
+- 前端备份页新增模块选择与导出按钮。
+- 踩坑：Content-Disposition 中文文件名 latin-1 编码崩溃 → RFC 5987 filename* +
+  ASCII 兜底（backup/anki 导出用的 FileResponse filename 参数无此问题）。
+- 实测：判断推理手册 806KB（7,000+ 考点核心立场全量），常识手册 4KB。
+
+## 九、待办 / 遗留
 
 - [x] GitHub 网络恢复，积压提交已全部推送（期间再次中断过，均已补齐）
 - [x] SQLite 在线备份 API（create 接口改用 sqlite3.backup）
