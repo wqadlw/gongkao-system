@@ -11,7 +11,7 @@
         <div v-for="group in menuGroups" :key="group.label" class="nav-group">
           <div class="nav-group-title">{{ group.label }}</div>
           <router-link v-for="item in group.items" :key="item.path" :to="item.path"
-                       class="nav-item" active-class="active" :title="item.label">
+                       class="nav-item" :class="{ active: isMenuActive(item) }" :title="item.label">
             <el-icon class="nav-ico"><component :is="item.icon" /></el-icon>
             <span class="nav-label">{{ item.label }}</span>
           </router-link>
@@ -98,6 +98,15 @@ const menuGroups = [
 ]
 
 const searchKw = ref('')
+
+// 菜单精确激活：路径与 query 均匹配（避免「行测资料库」与「我的收藏」同时高亮）
+function isMenuActive(item) {
+  const [path, qs] = item.path.split('?')
+  if (route.path !== path) return false
+  if (!qs) return !Object.keys(route.query).length
+  const wanted = new URLSearchParams(qs)
+  return [...wanted.entries()].every(([k, v]) => route.query[k] === v)
+}
 const darkMode = computed(() => store.darkMode)
 const nearestExam = computed(() => {
   const active = store.examCountdowns.filter(e => !e.is_passed && e.days_left >= 0)

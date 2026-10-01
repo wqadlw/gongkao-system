@@ -157,6 +157,7 @@ import { renderMarkdown } from '../utils/md'
 import ResourceTree from '../components/ResourceTree.vue'
 
 const md = renderMarkdown
+const route = useRoute()
 
 const categories = ref([])
 const typeCounts = ref({})
@@ -256,6 +257,20 @@ function onSearchInput() {
 }
 
 watch(currentType, () => { page.value = 1; loadList() })
+
+// 主侧边栏「我的收藏」在本页面时点击：query 变化但组件复用，需同步筛选状态
+watch(
+  () => route.query.favorite,
+  (v) => {
+    const want = v === '1'
+    if (want !== onlyFavorite.value) {
+      onlyFavorite.value = want
+      if (want) { currentFilters.value = {}; selectedPath.value = '' }
+      page.value = 1
+      loadList()
+    }
+  }
+)
 
 async function toggleFavorite(r, stop = true) {
   try {
