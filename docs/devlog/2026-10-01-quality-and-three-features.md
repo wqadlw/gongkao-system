@@ -120,7 +120,7 @@
   ASCII 兜底（backup/anki 导出用的 FileResponse filename 参数无此问题）。
 - 实测：判断推理手册 806KB（7,000+ 考点核心立场全量），常识手册 4KB。
 
-## 九、待办 / 遗留
+## 十、待办 / 遗留
 
 - [x] GitHub 网络恢复，积压提交已全部推送（期间再次中断过，均已补齐）
 - [x] SQLite 在线备份 API（create 接口改用 sqlite3.backup）
