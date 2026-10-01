@@ -337,6 +337,19 @@ class Resource(Base):
     create_time = Column(DateTime, default=datetime.now)
 
 
+# ========== 表12：模考试卷快照与作答记录（create_all 自动建表） ==========
+class MockQuestion(Base):
+    __tablename__ = "mock_questions"
+    id = Column(Integer, primary_key=True, index=True)
+    mock_id = Column(Integer, default=0, index=True)          # MockExam.id
+    question_id = Column(Integer, default=0)                  # questions.id
+    module = Column(String(50), default="")                   # 所属模块（计分用）
+    order_no = Column(Integer, default=0)                     # 题序
+    answer = Column(String(50), default="")                   # 正确答案
+    selected = Column(String(50), default="")                 # 用户作答（空=未答）
+    is_correct = Column(Integer)                              # 0/1，NULL=未判分
+
+
 # ========== 初始化函数 ==========
 def init_database():
     Base.metadata.create_all(bind=engine)

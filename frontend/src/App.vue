@@ -85,6 +85,7 @@ const menuGroups = [
   ]},
   { label: '复习巩固', items: [
     { path: '/review', icon: 'Refresh', label: '智能复习' },
+    { path: '/mock', icon: 'Stopwatch', label: '模考模式' },
     { path: '/errors', icon: 'Warning', label: '错题集' },
   ]},
   { label: '数据与规划', items: [

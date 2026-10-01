@@ -145,4 +145,13 @@ export const resourceApi = {
   fileUrl: (path) => '/api/resources/file?path=' + encodeURIComponent(path),
 }
 
+export const mockApi = {
+  start: (data) => api.post('/mock/start', data, { timeout: 120000 }),
+  list: () => api.get('/mock/list'),
+  paper: (id) => api.get(`/mock/${id}/paper`),
+  submit: (id, data) => api.post(`/mock/${id}/submit`, data, { timeout: 120000 }),
+  result: (id) => api.get(`/mock/${id}/result`),
+  remove: (id) => api.delete(`/mock/${id}`),
+}
+
 export default api

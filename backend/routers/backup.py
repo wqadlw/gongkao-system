@@ -30,7 +30,18 @@ def create_backup(db: Session = Depends(get_db)):
     os.makedirs(backup_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_path = os.path.join(backup_dir, f"gongkao_backup_{timestamp}.db")
-    shutil.copy2(DB_PATH, backup_path)
+    # 使用 SQLite 在线备份 API（连接可能带有未落盘事务，直接 copy 文件可能得到不一致快照）
+    import sqlite3
+
+    src = sqlite3.connect(DB_PATH)
+    try:
+        dst = sqlite3.connect(backup_path)
+        try:
+            src.backup(dst)
+        finally:
+            dst.close()
+    finally:
+        src.close()
     return {"message": "备份成功", "backup_path": backup_path, "backup_time": timestamp}
 
 

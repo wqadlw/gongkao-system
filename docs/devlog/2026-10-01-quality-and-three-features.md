@@ -89,9 +89,20 @@
   ③ 图片端点路径双拼 90-图片（path 已含前缀，基准应为脑库根）；④ 路由前缀叠加
   （/api/resources/naoku/media），导入改写与路由注册必须一致，批量 REPLACE 修正存量。
 
-## 七、待办 / 遗留
+## 七、模考模式上线（Roadmap #1 完成）
 
-- [x] GitHub 网络恢复，积压提交已全部推送
-- [ ] SQLite 在线备份 API（backup 用 sqlite3.backup 替换 shutil.copy2）
-- [ ] MockExam 写入口（模考模式，Roadmap #1）
+- 新表 `mock_questions`（试卷快照 + 作答记录），复用既有 `MockExam` 成绩表
+  （score_politics/common/verbal/quant/logic/data 与六大模块一一对应）。
+- `routers/mock.py`：start（按模块随机配额/按真题卷 source）/paper（断点续答，
+  已交卷 400）/submit（判分 + 模块计分 + 未答按错）/result（复盘逐题解析）/
+  delete。paper 不含答案，交卷前不泄露。
+- 前端 `/mock`：组卷表单 → 答题界面（倒计时不足 5 分钟闪烁、答题卡、
+  上一题/下一题）→ 成绩单（按正确率分档配色）+ 逐题复盘跳转题目详情。
+- 回归 9 项全过（组卷/无答案泄露/判分/模块计分/复盘/列表/断点/交卷保护/删除）。
+
+## 八、待办 / 遗留
+
+- [x] GitHub 网络恢复，积压提交已全部推送（期间再次中断过，均已补齐）
+- [x] SQLite 在线备份 API（create 接口改用 sqlite3.backup）
+- [x] MockExam 写入口（模考模式，Roadmap #1 完成）
 - [ ] 依赖升级（fastapi/pydantic 等较旧，6 包命中已知通告）
