@@ -150,6 +150,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { resourceApi } from '../api'
 import { renderMarkdown } from '../utils/md'
@@ -285,6 +286,8 @@ function openLink(r) {
 }
 
 onMounted(async () => {
+  // 主侧边栏「我的收藏」入口：?favorite=1 直达收藏筛选
+  if (useRoute().query.favorite === '1') onlyFavorite.value = true
   await Promise.all([loadCategories(), loadTree(), loadList(), loadFavoriteCount()])
 })
 </script>
