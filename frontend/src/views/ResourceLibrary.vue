@@ -152,7 +152,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { resourceApi } from '../api'
+import { resourceApi, favoritesApi } from '../api'
 import { renderMarkdown } from '../utils/md'
 import ResourceTree from '../components/ResourceTree.vue'
 
@@ -274,9 +274,9 @@ watch(
 
 async function toggleFavorite(r, stop = true) {
   try {
-    const res = await resourceApi.toggleFavorite(r.id)
-    r.is_favorite = res.data.is_favorite
-    if (detail.value?.id === r.id) detail.value.is_favorite = res.data.is_favorite
+    const res = await favoritesApi.toggle({ obj_type: 'resource', obj_id: r.id })
+    r.is_favorite = res.data.favorited
+    if (detail.value?.id === r.id) detail.value.is_favorite = res.data.favorited
     loadFavoriteCount()
     if (onlyFavorite.value && stop) loadList()
   } catch { ElMessage.error('收藏操作失败') }

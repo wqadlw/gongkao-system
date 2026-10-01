@@ -351,6 +351,16 @@ class MockQuestion(Base):
     is_correct = Column(Integer)                              # 0/1，NULL=未判分
 
 
+# ========== 表13：统一收藏中心（题目/资料/知识点/解题条目；create_all 自动建表） ==========
+class Favorite(Base):
+    __tablename__ = "favorites"
+    id = Column(Integer, primary_key=True, index=True)
+    obj_type = Column(String(30), default="", index=True)     # question/resource/knowledge/solve_item
+    obj_id = Column(Integer, default=0, index=True)
+    note = Column(String(500), default="")                    # 收藏备注
+    create_time = Column(DateTime, default=datetime.now)
+
+
 # ========== 初始化函数 ==========
 def init_database():
     Base.metadata.create_all(bind=engine)

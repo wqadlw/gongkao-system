@@ -160,4 +160,10 @@ export const handbookApi = {
   export: (module) => api.get('/handbook/export', { params: { module }, responseType: 'blob', timeout: 120000 }),
 }
 
+export const favoritesApi = {
+  list: (params) => api.get('/favorites', { params }),
+  toggle: (data) => api.post('/favorites/toggle', data),
+  status: (data) => api.post('/favorites/status', data),
+}
+
 export default api

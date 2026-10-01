@@ -1,6 +1,7 @@
 """资料库路由 — 公考资料（思维导图/外链指南）的浏览、预览与下载"""
 import json
 import os
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
@@ -207,6 +208,13 @@ def toggle_favorite(resource_id: int, db: Session = Depends(get_db)):
     if not r:
         raise HTTPException(status_code=404, detail="资料不存在")
     r.is_favorite = 0 if r.is_favorite else 1
+    # 双写统一收藏中心（favorites 表为跨对象收藏的单一事实源）
+    from database import Favorite
+    row = db.query(Favorite).filter(Favorite.obj_type == "resource", Favorite.obj_id == resource_id).first()
+    if r.is_favorite and not row:
+        db.add(Favorite(obj_type="resource", obj_id=resource_id, create_time=datetime.now()))
+    elif not r.is_favorite and row:
+        db.delete(row)
     db.commit()
     return {"is_favorite": bool(r.is_favorite)}
 
