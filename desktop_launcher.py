@@ -24,7 +24,33 @@ FRONTEND_DIST = os.path.join(BUNDLE_DIR, "frontend_dist")
 if not os.path.isdir(FRONTEND_DIST):
     FRONTEND_DIST = os.path.join(BASE_DIR, "frontend", "dist")
 
-DATA_DIR = os.path.join(BASE_DIR, "data")
+# 用户数据目录：便携模式（exe 旁可写）用 data/；装进 Program Files 等只读位置时
+# 自动落到 %LOCALAPPDATA%/GongKaoSystem/data，避免普通权限写入失败
+import tempfile
+
+_probe = os.path.join(BASE_DIR, "data")
+
+
+def probe_writable(directory: str) -> bool:
+    """用 tempfile 在目标目录创建探针并立即删除，验证目录可写"""
+    try:
+        with tempfile.NamedTemporaryFile(dir=directory, prefix=".write_test_", delete=False) as f:
+            f.write(b"ok")
+            probe = f.name
+        os.remove(probe)
+        return True
+    except OSError:
+        return False
+
+
+try:
+    os.makedirs(_probe, exist_ok=True)
+    if not probe_writable(_probe):
+        raise OSError("target dir not writable")
+    DATA_DIR = _probe
+except OSError:
+    DATA_DIR = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "GongKaoSystem", "data")
+os.makedirs(DATA_DIR, exist_ok=True)
 os.environ["GK_FRONTEND_DIST"] = FRONTEND_DIST
 os.makedirs(DATA_DIR, exist_ok=True)
 os.environ["GK_DATA_DIR"] = DATA_DIR
