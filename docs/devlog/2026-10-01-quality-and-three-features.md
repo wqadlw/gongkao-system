@@ -152,7 +152,20 @@
   "malformed JSON"）。
 - 实测：缩略图 421KB→8.7KB（48×），缓存命中 3ms，列表 17ms。
 
-## 十二、待办 / 遗留
+## 十二、Windows 桌面版 exe（PyInstaller）
+
+- `desktop_launcher.py`：配置用户数据目录（exe 旁 data/，GK_DATA_DIR）→
+  重定向 database engine → 设置 GK_FRONTEND_DIST → 启动 uvicorn → 自动开浏览器。
+- 打包：PyInstaller --add-data frontend_dist，排除 cv2(112MB)/pyarrow(85MB)/torch/matplotlib；
+  rapidocr collect-all（OCR 用 PIL 解码路径仍可用）；产物 135MB。
+- 踩坑：① Git Bash 不认 `^` 续行（用反斜杠）且 MSYS 路径转换破坏 --add-data
+  （必须写 D:/ 风格绝对路径）；② main.py 静态目录由 BASE_DIR 推导，打包后失效
+  → 增加 GK_FRONTEND_DIST 环境变量覆盖（开发模式不受影响）；③ 7080 端口被
+  开发后端占用会连到旧服务，测试 exe 前先 taskkill。
+- 实测：health/前端页/资料树/模考/FSRS engine 全 200，data/ 自动创建。
+- 打包脚本固化：scripts/build_exe.sh。
+
+## 十三、待办 / 遗留
 
 - [x] GitHub 网络恢复，积压提交已全部推送（期间再次中断过，均已补齐）
 - [x] SQLite 在线备份 API（create 接口改用 sqlite3.backup）

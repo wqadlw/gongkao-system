@@ -99,6 +99,18 @@ cd frontend && npm install && npm run build && cd ..
 ./start.sh
 ```
 
+### Windows 桌面版（免 Python 环境）
+
+打包为本地可执行程序，拷给别人双击即用：
+
+```bash
+bash scripts/build_exe.sh   # 产物：packaging/dist/GongKaoDesktop/（约 135MB）
+```
+
+把整个 `GongKaoDesktop` 文件夹发给对方，双击 `GongKaoDesktop.exe` 自动启动并打开浏览器；
+个人数据存放在该文件夹下的 `data/`，删除文件夹即卸载。
+（注：OCR 的 cv2 与 Parquet 数据集支持因体积未打包，OCR 识别图片仍可用，parquet 数据集请转 JSON/CSV。）
+
 ### 可选：启用真题库与 FSRS
 
 ```bash

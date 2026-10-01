@@ -63,7 +63,7 @@ def health_check():
     return {"status": "ok", "message": "系统运行正常", "version": "2.0.0", "offline": True}
 
 
-FRONTEND_DIST = os.path.join(BASE_DIR, "..", "frontend", "dist")
+FRONTEND_DIST = os.environ.get("GK_FRONTEND_DIST") or os.path.join(BASE_DIR, "..", "frontend", "dist")
 if os.path.exists(FRONTEND_DIST):
     app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIST, "assets")), name="assets")
     dist_root = os.path.realpath(FRONTEND_DIST)
