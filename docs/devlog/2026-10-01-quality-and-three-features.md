@@ -106,6 +106,9 @@
 点击任意层级按 sub_path 前缀过滤——三击即可从 11,147 收敛到数百条（如 考点精讲>资料分析>比重=762）。
 - 后端 `GET /api/resources/tree`：sub_path 按段聚合（Python 内存聚合 11k 行，毫秒级）。
 - 前端树：展开/收起 caret、三级缩进、选中高亮、类型筛选 chips 与树并存。
+- 二次踩坑（图片全挂）：resources 表重建后用**旧清单**重导入，清单里的
+  `resources/` 前缀当时只修了脚本和库、没重新生成清单文件 → 路径双重拼接 404。
+  教训：**修完生成逻辑必须重新生成中间产物**，凡清单/缓存类文件一律视为过期。
 - 踩坑：sort_children 误把"子节点字典"再按 ["children"] 取值（KeyError）；Vue3 `<template v-for>` 的 key 必须放在 template 标签上。
 
 ## 九、学习手册导出（吸收 NovaForge 模板结构）
