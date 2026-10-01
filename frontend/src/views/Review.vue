@@ -5,8 +5,11 @@
         <h2><el-icon><Refresh /></el-icon> 智能复习中心</h2>
         <p class="sub">
           FSRS 记忆调度
-          <span class="engine-badge" :class="{ on: engine === 'FSRS' }">{{ engine === 'FSRS' ? '已启用' : '未启用' }}</span>
+          <span class="engine-badge" :class="{ on: engine === 'FSRS' }">{{ engineBadge }}</span>
           · 空格翻面 · 1/2/3/4 评分
+          <el-link type="primary" :underline="false" class="opt-link" @click="openOptimize">
+            <el-icon><MagicStick /></el-icon> 优化参数
+          </el-link>
         </p>
       </div>
       <div class="mode-tabs">
@@ -91,11 +94,40 @@
         <button class="btn-default" @click="$router.push('/question-input')">录入新题</button>
       </div>
     </div>
+
+    <!-- FSRS 参数优化对话框 -->
+    <el-dialog v-model="optVisible" title="FSRS 参数个性化优化" width="620px">
+      <p class="opt-desc">
+        基于你的复习日志训练专属 FSRS 权重（官方 Rust 实现，本地训练不上传任何数据）。
+        复习记录越多，参数越贴合你的记忆规律。
+      </p>
+      <el-alert
+        v-if="optResult && !optResult.ok"
+        type="warning" :title="optResult.message" :closable="false" show-icon
+      />
+      <template v-if="optResult && optResult.ok">
+        <el-result icon="success" :title="optResult.message" />
+        <div class="opt-params">
+          <div class="opt-col">
+            <div class="opt-col-title">默认参数</div>
+            <code>{{ fmtParams(optResult.old_parameters) }}</code>
+          </div>
+          <div class="opt-col">
+            <div class="opt-col-title">你的专属参数</div>
+            <code class="opt-new">{{ fmtParams(optResult.new_parameters) }}</code>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <el-button @click="optVisible = false">关闭</el-button>
+        <el-button type="primary" :loading="optimizing" @click="runOptimize">开始优化</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { reviewApi } from '../api'
 import { renderMarkdown } from '../utils/md'
@@ -117,6 +149,41 @@ const reviewStats = ref({})
 const showAnswer = ref(false)
 const engine = ref('legacy')
 const sessionDone = ref(0)
+const optVisible = ref(false)
+const optimizing = ref(false)
+const optResult = ref(null)
+const customParams = ref(false)
+
+const engineBadge = computed(() => {
+  if (engine.value !== 'FSRS') return '未启用'
+  return customParams.value ? '已启用 · 个性化参数' : '已启用 · 默认参数'
+})
+
+function fmtParams(params) {
+  if (!Array.isArray(params)) return '—'
+  return params.map(p => Number(p).toFixed(2)).join(', ')
+}
+
+function openOptimize() {
+  optResult.value = null
+  optVisible.value = true
+}
+
+async function runOptimize() {
+  optimizing.value = true
+  try {
+    const res = await reviewApi.optimize()
+    optResult.value = res.data
+    if (res.data.ok) {
+      customParams.value = true
+      ElMessage.success('参数已生效，后续复习将使用个性化权重')
+    }
+  } catch {
+    ElMessage.error('优化失败，请检查后端日志')
+  } finally {
+    optimizing.value = false
+  }
+}
 
 async function loadDue() {
   let res
@@ -131,6 +198,7 @@ async function loadDue() {
   const [statsRes, engineRes] = await Promise.all([reviewApi.getStats(), reviewApi.engine()])
   reviewStats.value = statsRes.data
   engine.value = engineRes.data.engine
+  customParams.value = !!engineRes.data.custom_parameters
 }
 
 function switchMode(m) {
@@ -201,6 +269,14 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 .page-header .sub { margin: 4px 0 0; font-size: 12.5px; color: var(--text-tertiary); display: flex; align-items: center; gap: 6px; }
 .engine-badge { font-size: 11px; padding: 1px 8px; border-radius: 999px; background: var(--bg-subtle); color: var(--text-tertiary); }
 .engine-badge.on { background: var(--success-bg); color: var(--success); }
+.opt-link { font-size: 12px; margin-left: 4px; vertical-align: baseline; }
+.opt-link .el-icon { font-size: 12px; vertical-align: -0.15em; }
+.opt-desc { font-size: 13px; color: var(--text-secondary); margin: 0 0 12px; line-height: 1.7; }
+.opt-params { display: flex; gap: 12px; }
+.opt-col { flex: 1; background: var(--bg-subtle); border-radius: var(--radius-md); padding: 10px 12px; }
+.opt-col-title { font-size: 12px; color: var(--text-tertiary); font-weight: 700; margin-bottom: 6px; }
+.opt-col code { font-size: 11.5px; line-height: 1.8; word-break: break-all; display: block; color: var(--text-secondary); }
+.opt-col code.opt-new { color: var(--primary); font-weight: 600; }
 .mode-tabs { display: flex; gap: 4px; background: var(--bg-subtle); padding: 4px; border-radius: var(--radius-md); }
 .tab { padding: 6px 16px; border: none; background: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; color: var(--text-secondary); }
 .tab.active { background: var(--primary); color: white; }

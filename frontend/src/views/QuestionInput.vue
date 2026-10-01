@@ -64,6 +64,14 @@
           <div class="card-header">
             <h3>② 粘贴 AI 返回结果</h3>
             <div>
+              <el-upload
+                :show-file-list="false" accept="image/*" :auto-upload="false"
+                :on-change="onScreenshotPick"
+              >
+                <button class="btn-default small" :disabled="ocrLoading" title="离线 OCR 识别题干文字，预填到题干输入框">
+                  <el-icon><Camera /></el-icon> {{ ocrLoading ? '识别中…' : '截图识别题干' }}
+                </button>
+              </el-upload>
               <button class="btn-default small" @click="aiContent = ''">清空</button>
               <button class="btn-primary" @click="parseAI" :disabled="!aiContent"><el-icon><Search /></el-icon> 解析</button>
             </div>
@@ -93,7 +101,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { promptApi, questionApi } from '../api'
+import { promptApi, questionApi, ocrApi } from '../api'
 import { useAppStore } from '../stores/app'
 import { ElMessage } from 'element-plus'
 import { renderMarkdown } from '../utils/md'
@@ -126,6 +134,30 @@ const matchedPrompt = computed(() => {
 const aiContent = ref('')
 const parsedPreview = ref(null)
 const parseValidation = ref(null)
+const ocrLoading = ref(false)
+
+// 截图识别题干：离线 OCR 提取文字，预填到题干输入框（公式等复杂内容仍交给 AI）
+async function onScreenshotPick(file) {
+  const raw = file?.raw
+  if (!raw) return
+  ocrLoading.value = true
+  try {
+    const res = await ocrApi.recognize(raw)
+    const text = (res.data.text || '').trim()
+    if (!text) {
+      ElMessage.warning('未识别到文字，请换一张更清晰的截图')
+      return
+    }
+    questionText.value = questionText.value
+      ? questionText.value + '\n' + text
+      : text
+    ElMessage.success(`已识别 ${res.data.line_count} 行文字并填入题干`)
+  } catch (e) {
+    ElMessage.error('识别失败：' + (e.response?.data?.detail || '请确认已安装 rapidocr-onnxruntime'))
+  } finally {
+    ocrLoading.value = false
+  }
+}
 // 卡片缩略信息预览：把存储的「｜」分隔字符串拆成标签数组
 const cardPreviewTags = computed(() =>
   (parsedPreview.value?.card_tags || '').split('｜').map(s => s.trim()).filter(Boolean)

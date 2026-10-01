@@ -43,6 +43,7 @@ export const reviewApi = {
   getLogs: (limit) => api.get('/review/logs', { params: { limit } }),
   getOverdue: () => api.get('/review/overdue'),
   engine: () => api.get('/review/engine'),
+  optimize: () => api.post('/review/optimize', {}, { timeout: 600000 }),
 }
 
 export const noteApi = {
@@ -125,6 +126,14 @@ export const bankApi = {
 
 export const searchApi = {
   search: (q, limit) => api.get('/search', { params: { q, limit }, timeout: 60000 }),
+}
+
+export const ocrApi = {
+  recognize: (file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return api.post('/ocr', form, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 })
+  },
 }
 
 export default api

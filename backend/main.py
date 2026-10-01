@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from database import init_all, DB_PATH
-from routers import categories, prompts, questions, review, notes, study, stats, backup, exam, knowledge, solve_library, question_bank, anki_export, search
+from routers import categories, prompts, questions, review, notes, study, stats, backup, exam, knowledge, solve_library, question_bank, anki_export, search, ocr
 
 app = FastAPI(
     title="公考行测知识库系统 v2",
@@ -41,6 +41,7 @@ app.include_router(solve_library.router)
 app.include_router(question_bank.router)
 app.include_router(anki_export.router)
 app.include_router(search.router)
+app.include_router(ocr.router)
 
 
 @app.on_event("startup")

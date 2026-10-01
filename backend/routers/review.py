@@ -10,6 +10,7 @@ from services.review_engine import (
     calculate_next_review, update_master_level, calculate_review_stats,
     schedule_fsrs, fsrs_card_summary, FSRS_AVAILABLE, DEFAULT_RETENTION,
 )
+from services.fsrs_optimizer import optimize_parameters, get_fsrs_parameters
 from services.stats_engine import update_daily_stat
 
 router = APIRouter(prefix="/api/review", tags=["智能复习"])
@@ -72,11 +73,12 @@ def submit_review(req: ReviewSubmit, db: Session = Depends(get_db)):
     fsrs_summary = {}
     if FSRS_AVAILABLE:
         try:
+            custom_params = get_fsrs_parameters(db)
             st = db.query(FsrsState).filter(FsrsState.question_id == q.id).first()
             card_dict = json.loads(st.card_json) if st and st.card_json else None
             retention = st.desired_retention if st and st.desired_retention else DEFAULT_RETENTION
             card_dict, due_local, interval_days = schedule_fsrs(
-                card_dict, req.review_result, retention, req.cost_time)
+                card_dict, req.review_result, retention, req.cost_time, parameters=custom_params)
             if not st:
                 st = FsrsState(question_id=q.id)
                 db.add(st)
@@ -104,13 +106,22 @@ def submit_review(req: ReviewSubmit, db: Session = Depends(get_db)):
 
 
 @router.get("/engine")
-def engine_info():
+def engine_info(db: Session = Depends(get_db)):
+    custom = get_fsrs_parameters(db) is not None
     return {
         "engine": "FSRS" if FSRS_AVAILABLE else "legacy",
         "fsrs_available": FSRS_AVAILABLE,
+        "custom_parameters": custom,
         "desired_retention": DEFAULT_RETENTION,
-        "description": "FSRS 动态记忆调度" if FSRS_AVAILABLE else "固定周期（未安装 fsrs 库）",
+        "description": ("FSRS 动态记忆调度（个性化参数）" if custom else "FSRS 动态记忆调度")
+        if FSRS_AVAILABLE else "固定周期（未安装 fsrs 库）",
     }
+
+
+@router.post("/optimize")
+def run_optimize(db: Session = Depends(get_db)):
+    """基于复习日志训练个性化 FSRS 参数（fsrs-rs）"""
+    return optimize_parameters(db)
 
 
 @router.get("/stats")

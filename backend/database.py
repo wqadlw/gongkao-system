@@ -310,6 +310,15 @@ class FsrsState(Base):
     update_time = Column(DateTime, default=datetime.now)
 
 
+# ========== 表10：应用设置（KV 存储，如 FSRS 个性化参数；create_all 自动建表） ==========
+class AppSetting(Base):
+    __tablename__ = "app_settings"
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(100), default="", index=True)
+    value = Column(Text, default="")
+    update_time = Column(DateTime, default=datetime.now)
+
+
 # ========== 初始化函数 ==========
 def init_database():
     Base.metadata.create_all(bind=engine)
@@ -423,6 +432,10 @@ def recalc_category_counts(db):
     复杂度 O(题目分组数 + 分类数)，替代旧的 分类数×题目数 双重全表循环。
     """
     from sqlalchemy import func, case
+
+    # SessionLocal 为 autoflush=False：先把调用方挂起的题目写入 flush 出去，
+    # 否则聚合查询看不到未落库的新题目，导致计数为 0
+    db.flush()
 
     cats = db.query(Category).all()
     rows = (

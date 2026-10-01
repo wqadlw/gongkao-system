@@ -23,23 +23,31 @@ FSRS_RATING_MAP = {"again": "Again", "hard": "Hard", "good": "Good", "easy": "Ea
 DEFAULT_RETENTION = 0.9
 
 
-def get_scheduler(desired_retention: float = DEFAULT_RETENTION):
-    """学习期步长 1/10 分钟，再学习 10 分钟；阶段内短间隔，毕业后进入 FSRS 长间隔调度"""
+def get_scheduler(desired_retention: float = DEFAULT_RETENTION, parameters=None):
+    """学习期步长 1/10 分钟，再学习 10 分钟；阶段内短间隔，毕业后进入 FSRS 长间隔调度
+
+    parameters 传入个性化权重（None 时用库内默认值）
+    """
+    kwargs = {}
+    if parameters:
+        kwargs["parameters"] = list(parameters)
     return Scheduler(
         desired_retention=desired_retention,
         learning_steps=(timedelta(minutes=1), timedelta(minutes=10)),
         relearning_steps=(timedelta(minutes=10),),
+        **kwargs,
     )
 
 
-def schedule_fsrs(card_dict: dict | None, result: str, desired_retention: float = DEFAULT_RETENTION, cost_time: int = 0):
+def schedule_fsrs(card_dict: dict | None, result: str, desired_retention: float = DEFAULT_RETENTION,
+                  cost_time: int = 0, parameters=None):
     """对单张 FSRS 卡执行一次复习调度
 
     card_dict 为 None 表示首次复习（新建卡片）。
     返回 (new_card_dict, due_local_naive, interval_days)
     """
     rating = getattr(Rating, FSRS_RATING_MAP.get(result, "Good"))
-    scheduler = get_scheduler(desired_retention)
+    scheduler = get_scheduler(desired_retention, parameters)
     card = Card.from_dict(card_dict) if card_dict else Card()
     # py-fsrs 要求 review_datetime 为 UTC 时区感知时间
     new_card, _ = scheduler.review_card(card, rating, review_datetime=datetime.now(timezone.utc), review_duration=cost_time or None)

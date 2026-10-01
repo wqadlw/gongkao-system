@@ -6,3 +6,5 @@ python-multipart==0.0.6
 aiofiles==23.2.1
 fsrs>=5.0
 genanki>=0.13
+fsrs-rs-python>=0.9
+rapidocr-onnxruntime>=1.4
