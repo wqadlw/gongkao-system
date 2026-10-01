@@ -72,14 +72,15 @@ def bank_file_detail(module: str, name: str, db: Session = Depends(get_db)):
         parsed = parse_bank_file(name, module)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    # 标记已导入的题目
+    # 标记已导入的题目（带本系统题目 ID，供收藏星标与跳转）
     qids = [q["qid"] for q in parsed["questions"] if q["qid"]]
-    imported_qids = set()
+    qid_map = {}
     if qids:
-        rows = db.query(BankImport.bank_qid).filter(BankImport.bank_qid.in_(qids)).all()
-        imported_qids = {r[0] for r in rows}
+        rows = db.query(BankImport.bank_qid, BankImport.question_id).filter(BankImport.bank_qid.in_(qids)).all()
+        qid_map = {r[0]: r[1] for r in rows}
     for q in parsed["questions"]:
-        q["imported"] = bool(q["qid"] and q["qid"] in imported_qids)
+        q["imported"] = bool(q["qid"] and q["qid"] in qid_map)
+        q["question_id"] = qid_map.get(q["qid"], 0)
     return parsed
 
 

@@ -312,7 +312,10 @@ onMounted(async () => {
 .type-chip.active i { color: rgba(255,255,255,0.8); }
 
 .reslib-layout { display: flex; gap: 16px; align-items: flex-start; }
-.reslib-side { width: 220px; flex-shrink: 0; padding: 10px; position: sticky; top: 16px; }
+.reslib-side {
+  width: 220px; flex-shrink: 0; padding: 10px; position: sticky; top: 16px;
+  max-height: calc(100vh - 32px); overflow-y: auto;
+}
 .cat-item {
   display: flex; justify-content: space-between; align-items: center; width: 100%;
   padding: 9px 12px; border: none; background: none; border-radius: var(--radius-md);

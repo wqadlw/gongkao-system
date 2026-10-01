@@ -108,6 +108,10 @@
               <span v-if="q.material_no" class="q-tag material">材料 {{ q.material_no }}</span>
               <span class="q-qid">qid {{ q.qid }}</span>
               <span v-if="q.imported" class="q-imported">✓ 已入库</span>
+              <FavoriteStar v-if="q.imported && q.question_id" inline
+                :obj-type="'question'" :obj-id="q.question_id" />
+              <router-link v-if="q.imported && q.question_id" :to="'/question/' + q.question_id"
+                class="q-view-link" title="查看题目详情">查看</router-link>
               <span class="q-answer">答案：<b>{{ q.answer }}</b></span>
             </div>
             <div v-if="q.material" class="q-material md-body" v-html="md(q.material)"></div>
@@ -138,6 +142,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { bankApi, categoryApi } from '../api'
+import FavoriteStar from '../components/FavoriteStar.vue'
 import { renderMarkdown, renderInline } from '../utils/md'
 import CategoryTree from '../components/CategoryTree.vue'
 
@@ -360,6 +365,8 @@ onMounted(async () => {
 .q-tag.material { background: rgba(230, 162, 60, .15); color: var(--warning, #e6a23c); }
 .q-qid { font-size: 11px; color: var(--text-tertiary, #aaa); }
 .q-imported { font-size: 12px; color: var(--success, #67c23a); }
+.q-view-link { font-size: 12px; color: var(--primary, #409eff); text-decoration: none; }
+.q-view-link:hover { text-decoration: underline; }
 .q-answer { margin-left: auto; font-size: 12.5px; color: var(--text-secondary, #666); }
 .q-material { border-left: 3px solid var(--border-base, #ddd); padding-left: 10px; margin-bottom: 8px; font-size: 13px; }
 .q-stem { font-size: 14px; }
