@@ -168,7 +168,7 @@ onMounted(() => {
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 
-.side-nav { padding: 10px 10px 4px; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; overflow-y: auto; }
+.side-nav { padding: 10px 10px 4px; display: flex; flex-direction: column; gap: 2px; flex: 1; min-height: 0; overflow-y: auto; }
 .nav-group { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
 .nav-group:last-child { margin-bottom: 0; }
 .nav-group-title {
