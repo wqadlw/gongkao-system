@@ -108,8 +108,10 @@ def resource_list(
     if keyword:
         query = query.filter(Resource.title.contains(keyword) | Resource.sub_path.contains(keyword))
     total = query.count()
-    rows = query.order_by(Resource.category, Resource.sub_path, Resource.title).offset(
-        (page - 1) * page_size).limit(page_size).all()
+    # 有预览图的资料（思维导图）排在前面，默认首屏可见图片墙
+    rows = query.order_by(
+        (Resource.image_path == ""), Resource.category, Resource.sub_path, Resource.title
+    ).offset((page - 1) * page_size).limit(page_size).all()
     return {
         "items": [{
             "id": r.id, "category": r.category, "sub_path": r.sub_path,

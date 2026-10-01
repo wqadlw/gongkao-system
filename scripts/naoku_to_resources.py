@@ -27,7 +27,7 @@ EMOJI = re.compile(r"[\U0001F300-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF\uFE0F]")
 
 
 def clean_text(text: str):
-    """wikilink 清洗 + emoji 清理，返回 (正文, qid 列表)"""
+    """wikilink 清洗 + emoji 清理 + 图片路径改写，返回 (正文, qid 列表)"""
     qids = []
     for m in re.finditer(r"\[\[([^\]]+)\]\]", text):
         inner = m.group(1)
@@ -37,6 +37,12 @@ def clean_text(text: str):
     text = WIKILINK_ALIAS.sub(r"\1", text)
     text = WIKILINK_PLAIN.sub(lambda m: m.group(1).split("/")[-1], text)
     text = EMOJI.sub("", text)
+    # 正文内的配图改写为站内媒体端点（相对层级不定，统一按 90-图片/ 后缀匹配）
+    text = re.sub(
+        r"(?:\.\./)*90-图片/",
+        "/api/resources/naoku/media?path=90-图片/",
+        text,
+    )
     return text.strip(), qids
 
 
