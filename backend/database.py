@@ -319,6 +319,22 @@ class AppSetting(Base):
     update_time = Column(DateTime, default=datetime.now)
 
 
+# ========== 表11：资料库（思维导图/外链指南等公考资料；create_all 自动建表） ==========
+class Resource(Base):
+    __tablename__ = "resources"
+    id = Column(Integer, primary_key=True, index=True)
+    category = Column(String(50), default="", index=True)     # 行测/申论/面试/经验指南
+    sub_path = Column(String(300), default="")                # 模块/主题/考点 路径
+    title = Column(String(300), default="")
+    description = Column(Text, default="")
+    resource_type = Column(String(30), default="mindmap")     # mindmap / link
+    image_path = Column(String(500), default="")              # 预览图相对 data/resources/
+    file_path = Column(String(500), default="")               # 原文件相对路径（可下载）
+    source_url = Column(String(500), default="")              # 外链地址
+    source = Column(String(300), default="")
+    create_time = Column(DateTime, default=datetime.now)
+
+
 # ========== 初始化函数 ==========
 def init_database():
     Base.metadata.create_all(bind=engine)

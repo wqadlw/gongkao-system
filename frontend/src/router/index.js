@@ -9,6 +9,7 @@ const routes = [
   { path: '/question-list', name: 'QuestionList', component: () => import('../views/QuestionList.vue'), meta: { title: '题库列表' } },
   { path: '/question-bank', name: 'QuestionBank', component: () => import('../views/QuestionBank.vue'), meta: { title: '真题库对接' } },
   { path: '/knowledge', name: 'Knowledge', component: () => import('../views/Knowledge.vue'), meta: { title: '行测知识库' } },
+  { path: '/resource-library', name: 'ResourceLibrary', component: () => import('../views/ResourceLibrary.vue'), meta: { title: '行测资料库' } },
   { path: '/solve-library', name: 'SolveLibrary', component: () => import('../views/SolveLibrary.vue'), meta: { title: '行测解题库' } },
   { path: '/question/:id', name: 'QuestionDetail', component: () => import('../views/QuestionDetail.vue'), meta: { title: '题目详情' } },
   { path: '/search', name: 'Search', component: () => import('../views/Search.vue'), meta: { title: '全局搜索' } },

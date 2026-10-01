@@ -56,9 +56,18 @@
 
 **踩坑**：gh-proxy 对中文路径的 raw 请求 404，需走 contents API（base64）；git clone 不受影响。
 
-## 四、待办 / 遗留
+## 四、新功能：资料库（resource-library）
 
-- [ ] 本批提交因 GitHub 网络中断未推送（本地领先 2 个提交，恢复后补推）
+- 新表 `resources`（mindmap/link 两类），`routers/resources.py`：分类计数/分页列表/图片与文件服务（realpath 限定 data/resources，穿越已测拦截）/batch 导入。
+- `scripts/kuriv_to_resources.py`：51 张导图（行测 5 模块 + 申论 + 面试，含 PNG 预览与 emmx 下载）+ 4 条外链（coder2gwy、developer2gwy 指南——无明确开源许可，只收录外链不拷贝内容；xingcezhenti/LogiQA 溯源链接）。
+- 前端 `/resource-library`：左侧分类（含计数）+ 图片卡片墙 + 详情大图预览/下载；侧栏「资料库」分组新增入口。
+- 踩坑 ×3：① RESOURCES_DIR 从 routers/ 只退一级导致路径错（改用 DB_PATH 同源锚点）；② 清单路径多写一层 resources/ 前缀（脚本口径统一为相对 data/resources）；③ Vue 模板在 el-dialog 内混用 <template v-if> 与具名插槽会编译报错（改为 v-if 表达式守卫）。
+- 测试脚本第三次忘给中文参数 urlencode——教训：所有请求参数一律走 urlencode。
+- 网络恢复，此前积压的 2 个提交与本次全部推送成功。
+
+## 五、待办 / 遗留
+
+- [x] GitHub 网络恢复，积压提交已全部推送
 - [ ] SQLite 在线备份 API（backup 用 sqlite3.backup 替换 shutil.copy2）
 - [ ] MockExam 写入口（模考模式，Roadmap #1）
 - [ ] 依赖升级（fastapi/pydantic 等较旧，6 包命中已知通告）
