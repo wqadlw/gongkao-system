@@ -28,7 +28,7 @@
 - 📷 **离线 OCR 截图识别（v2.1 新增）**：录入页上传刷题截图，本地 OCR 直接提取题干文字预填（[RapidOCR](https://github.com/RapidAI/RapidOCR)，无需联网），公式等复杂内容仍交给 AI 精析。
 - 📤 **Anki 牌组导出（v2.1 新增）**：一键导出 `.apkg`（题面 / 答案 / 解析 / 考点标签，公式图自动打包媒体），手机 AnkiDroid 随时随地刷题。
 - 📚 **行测知识库**：独立知识卡片，按「模块 / 类型 / 考点」三维导航；含考点定位面包屑与「来源题目」一键溯源。
-- 🗂 **资料库（v2.1 新增）**：51 张公考思维导图（行测五模块 + 申论 + 面试，PNG 预览 + .emmx 下载，来源 [kuriv/civil-service-exam](https://github.com/kuriv/civil-service-exam) MIT）；收录程序员考公指南等高星外链资料。
+- 🗂 **资料库（v2.1 新增）**：**11,000+ 份公考资料**统一收纳——51 张思维导图（[kuriv/civil-service-exam](https://github.com/kuriv/civil-service-exam) MIT）、**10,375 条考点精讲**（母题级「核心立场」，来自 [ERRRC/kaogongzhentizhengliu](https://github.com/ERRRC/kaogongzhentizhengliu) 考公脑库，与真题 qid 关联可跳转）、717 份资料分析材料结构档案、程序员考公指南等外链；类型筛选 + 模块分面 + 关键词检索。
 - 🛠️ **行测解题库**：可复用的解题模板（破题逻辑 / 易错提醒 / 解题方法 / 速算技巧 / 题型识别）。
 - 🗂️ **题库与详情**：按题型树分类、错题 / 掌握度筛选；题目详情展示 18 个结构化字段。
 - 📝 **备考笔记**：支持 AI 追问生成结构化笔记，卡片内完整展示题干与选项。

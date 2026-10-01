@@ -1,4 +1,5 @@
 """资料库路由 — 公考资料（思维导图/外链指南）的浏览、预览与下载"""
+import json
 import os
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -33,20 +34,31 @@ class ResourceBatch(BaseModel):
 
 @router.get("/categories")
 def resource_categories(db: Session = Depends(get_db)):
-    """一级分类与计数"""
-    rows = db.query(Resource.category).all()
-    counts = {}
-    for (cat,) in rows:
+    """一级分类与计数 + 类型计数 + 考点精讲的模块分面"""
+    rows = db.query(Resource.category, Resource.resource_type, Resource.sub_path).all()
+    counts, type_counts, subs = {}, {}, {}
+    for cat, rtype, sub in rows:
         counts[cat] = counts.get(cat, 0) + 1
-    order = ["行测", "申论", "面试", "经验指南"]
+        type_counts[rtype] = type_counts.get(rtype, 0) + 1
+        if cat == "考点精讲" and sub:
+            mod = sub.split("/")[0]
+            subs[mod] = subs.get(mod, 0) + 1
+    order = ["行测", "申论", "面试", "考点精讲", "材料档案", "经验指南"]
     items = [{"name": c, "count": counts[c]} for c in order if c in counts]
     items += [{"name": c, "count": n} for c, n in sorted(counts.items()) if c not in order]
-    return {"items": items, "total": sum(counts.values())}
+    return {
+        "items": items,
+        "total": sum(counts.values()),
+        "type_counts": type_counts,
+        "subs": dict(sorted(subs.items(), key=lambda x: -x[1])),
+    }
 
 
 @router.get("/list")
 def resource_list(
     category: Optional[str] = None,
+    resource_type: Optional[str] = None,
+    sub_prefix: Optional[str] = None,
     keyword: Optional[str] = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(24, ge=1, le=100),
@@ -55,6 +67,10 @@ def resource_list(
     query = db.query(Resource)
     if category:
         query = query.filter(Resource.category == category)
+    if resource_type:
+        query = query.filter(Resource.resource_type == resource_type)
+    if sub_prefix:
+        query = query.filter(Resource.sub_path.like(sub_prefix + "%"))
     if keyword:
         query = query.filter(Resource.title.contains(keyword) | Resource.sub_path.contains(keyword))
     total = query.count()
@@ -65,6 +81,8 @@ def resource_list(
             "id": r.id, "category": r.category, "sub_path": r.sub_path,
             "title": r.title, "description": r.description,
             "resource_type": r.resource_type,
+            "excerpt": (r.content or "")[:150],
+            "qid_count": len(json.loads(r.related_qids)) if r.related_qids else 0,
             "image_path": r.image_path, "file_path": r.file_path,
             "source_url": r.source_url, "source": r.source,
         } for r in rows],
@@ -89,9 +107,50 @@ def resource_file(path: str = Query(...)):
     return FileResponse(abs_path, filename=os.path.basename(abs_path))
 
 
+@router.get("/detail/{resource_id}")
+def resource_detail(resource_id: int, db: Session = Depends(get_db)):
+    r = db.query(Resource).filter(Resource.id == resource_id).first()
+    if not r:
+        raise HTTPException(status_code=404, detail="资料不存在")
+    return {
+        "id": r.id, "category": r.category, "sub_path": r.sub_path,
+        "title": r.title, "description": r.description,
+        "resource_type": r.resource_type, "content": r.content,
+        "image_path": r.image_path, "file_path": r.file_path,
+        "source_url": r.source_url, "source": r.source,
+    }
+
+
+@router.get("/detail/{resource_id}/questions")
+def resource_related_questions(resource_id: int, db: Session = Depends(get_db)):
+    """把资料的 related_qids 通过 bank_imports 映射到本系统题目（供详情页跳转）"""
+    from database import BankImport, Question
+
+    r = db.query(Resource).filter(Resource.id == resource_id).first()
+    if not r or not r.related_qids:
+        return {"items": []}
+    try:
+        qids = json.loads(r.related_qids)
+    except ValueError:
+        return {"items": []}
+    if not qids:
+        return {"items": []}
+    rows = (
+        db.query(BankImport.bank_qid, Question.id, Question.answer, Question.source)
+        .join(Question, Question.id == BankImport.question_id)
+        .filter(BankImport.bank_qid.in_(qids))
+        .all()
+    )
+    return {"items": [
+        {"bank_qid": bqid, "question_id": qid, "answer": answer, "source": source}
+        for bqid, qid, answer, source in rows
+    ]}
+
+
 @router.post("/batch")
 def resource_batch(data: ResourceBatch, db: Session = Depends(get_db)):
-    """批量导入（脚本产出清单后调用）；以 (title, sub_path) 判重"""
+    """批量导入（脚本产出清单后调用）；以 (title, sub_path) 判重，预载已有集合避免逐条查询"""
+    existing = {(t, p) for t, p in db.query(Resource.title, Resource.sub_path).all()}
     created = skipped = 0
     for it in data.items:
         title = (it.get("title") or "").strip()
@@ -100,15 +159,16 @@ def resource_batch(data: ResourceBatch, db: Session = Depends(get_db)):
         if not title or not category:
             skipped += 1
             continue
-        exists = db.query(Resource.id).filter(
-            Resource.title == title, Resource.sub_path == sub_path).first()
-        if exists:
+        if (title, sub_path) in existing:
             skipped += 1
             continue
+        existing.add((title, sub_path))
         db.add(Resource(
             category=category, sub_path=sub_path, title=title,
             description=it.get("description", ""),
             resource_type=it.get("resource_type", "mindmap"),
+            content=it.get("content", ""),
+            related_qids=json.dumps(it.get("related_qids", []), ensure_ascii=False) if it.get("related_qids") else "",
             image_path=it.get("image_path", ""),
             file_path=it.get("file_path", ""),
             source_url=it.get("source_url", ""),

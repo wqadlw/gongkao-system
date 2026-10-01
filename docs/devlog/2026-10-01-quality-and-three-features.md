@@ -65,7 +65,17 @@
 - 测试脚本第三次忘给中文参数 urlencode——教训：所有请求参数一律走 urlencode。
 - 网络恢复，此前积压的 2 个提交与本次全部推送成功。
 
-## 五、待办 / 遗留
+## 五、资料库结构升级：接入考公脑库（kaogongzhentizhengliu）
+
+- 同作者（ERRRC）Obsidian 知识库：11,282 篇逐题深度标注 + 10,375 考点 MOC + 717 材料档案，qid 与 xingcezhenti 同源。
+- `resources` 表升级：新增 content / related_qids 列（数据可再生，DROP 后 create_all 重建）。
+- `scripts/naoku_to_resources.py`：MOC → 考点精讲 10,375 条（wikilink 清洗 + emoji 清理 + qid 提取，11,051 条带关联）；材料 → 材料档案 717 条。
+- 资料库总计 **11,147 条**：思维导图 51 / 考点精讲 10,375 / 材料档案 717 / 外链 4。
+- 前端重设计：类型筛选 chips + 考点精讲模块分面（判断推理/资料分析）+ 文本卡与图片卡自适应 + 详情 markdown 渲染 + 关联真题跳转（qid → bank_imports → 题目详情，导入对应题目后自动激活）。
+- 11,147 条导入仅 2.1s（batch 预载去重集）；batch 逐条查询的 N+1 同步消除。
+- 方案 A（11,282 篇逐题标注回填题目结构化字段）待用户确认后另行实施。
+
+## 六、待办 / 遗留
 
 - [x] GitHub 网络恢复，积压提交已全部推送
 - [ ] SQLite 在线备份 API（backup 用 sqlite3.backup 替换 shutil.copy2）

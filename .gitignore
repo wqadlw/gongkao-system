@@ -57,5 +57,6 @@ data/ceval/
 data/question_sources/
 data/ceval_tree.json
 data/kuriv-mindmaps/
+data/kaogong-naoku/
 .mimosa/
 check_note.py

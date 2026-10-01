@@ -139,6 +139,8 @@ export const ocrApi = {
 export const resourceApi = {
   categories: () => api.get('/resources/categories'),
   list: (params) => api.get('/resources/list', { params }),
+  detail: (id) => api.get(`/resources/detail/${id}`),
+  relatedQuestions: (id) => api.get(`/resources/detail/${id}/questions`),
   imageUrl: (path) => '/api/resources/image?path=' + encodeURIComponent(path),
   fileUrl: (path) => '/api/resources/file?path=' + encodeURIComponent(path),
 }
